@@ -60,9 +60,10 @@ import argparse
 # other
 
 # home grown
-from fsrc import *
+from runningclub import *
 import version
-from running import racefile,racedb
+import racefile
+import racedb
 
 # debug output, maybe
 OUT = None
@@ -134,7 +135,9 @@ def updateseries(session, fileraces):
     for seriesname in allseries:
         # add or update series in database
         thisseries = allseries[seriesname]
-        series = racedb.Series(seriesname,thisseries['members-only'],thisseries['overall'],thisseries['divisions'],thisseries['age grade'])
+        series = racedb.Series(seriesname,thisseries['members-only'],thisseries['overall'],thisseries['divisions'],thisseries['age grade'],
+                               thisseries['order by'],thisseries['average tie'],thisseries['max races'],thisseries['multiplier'],
+                               thisseries['max gender'], thisseries['max division'],thisseries['max by runners'])
         added = racedb.insert_or_update(session,racedb.Series,series,skipcolumns=['id'],name=series.name)
         
         # remove this series from collection of series which should be deleted in database
@@ -264,7 +267,7 @@ def main():
     '''
     update race information
     '''
-    parser = argparse.ArgumentParser(version='{0} {1}'.format('fsrc',version.__version__))
+    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('racefile',help='file with race information')
     parser.add_argument('-r','--racedb',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
     parser.add_argument('--debug',help='if set, create updateraces.txt for debugging',action='store_true')

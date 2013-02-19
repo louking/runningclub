@@ -41,13 +41,13 @@ import xlrd
 # other
 
 # home grown
-from fsrc import *
+from runningclub import *
 import version
+import racedb
+import clubmember
+import raceresults
+import agegrade
 from loutilities import timeu
-from running import racedb
-from running import clubmember
-from running import raceresults
-from running import agegrade
 
 # module globals
 tYmd = timeu.asctime('%Y-%m-%d')
@@ -200,7 +200,7 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
 #----------------------------------------------------------------------
 def main(): 
 #----------------------------------------------------------------------
-    parser = argparse.ArgumentParser(version='{0} {1}'.format('fsrc',version.__version__))
+    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
     parser.add_argument('-f','--resultsfile',help='file with results information',default=None)
     parser.add_argument('-r','--racedbfile',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')

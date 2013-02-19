@@ -47,8 +47,10 @@ import argparse
 # other
 
 # home grown
+from runningclub import *
 import version
-from running import clubmember,racedb
+import clubmember
+import racedb
 
 #----------------------------------------------------------------------
 def main(): 
@@ -56,7 +58,7 @@ def main():
     '''
     update club membership information
     '''
-    parser = argparse.ArgumentParser(version='{0} {1}'.format('fsrc',version.__version__))
+    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('memberfile',help='file with member information')
     parser.add_argument('-r','--racedb',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
     parser.add_argument('--debug',help='if set, create updatemembers.txt for debugging',action='store_true')

@@ -27,8 +27,11 @@ fsrc - data analysis and automation for Frederick Steeplechaser Running Club
 '''
 
 # standard
+import os
+import os.path
 
 # pypi
+import appdirs
 
 # github
 
@@ -39,3 +42,7 @@ fsrc - data analysis and automation for Frederick Steeplechaser Running Club
 # general purpose exceptions
 class parameterError(Exception): pass
 class dbConsistencyError(Exception): pass
+
+# configuration location for running scripts
+CONFIGDIR = appdirs.user_data_dir('runningclub','Lou King')
+if not os.path.exists(CONFIGDIR): os.makedirs(CONFIGDIR)

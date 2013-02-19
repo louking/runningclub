@@ -36,7 +36,7 @@ def globit(dir, filelist):
     return (dir, outfiles)
 
 setup(
-    name = "fsrc",
+    name = "runningclub",
     version = version.__version__,
     packages = find_packages(),
 #    include_package_data = True,
@@ -46,10 +46,8 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires = [
-        'matplotlib>=1.1.1',
         #'loutilities>=0.5.0',
         'xlrd>=0.8.0',
-        'httplib2>=0.7.7',
         ],
 
     # If any package contains any of these file types, include them:
@@ -66,11 +64,11 @@ setup(
     zip_safe = False,
 
     # metadata for upload to PyPI
-    description = 'data analysis and automation for Frederick Steeplechaser Running Club',
+    description = 'data analysis and automation for a running club',
     license = 'Apache License, Version 2.0',
     author = 'Lou King',
     author_email = 'lking@pobox.com',
-    url = 'http://github.com/louking/fsrc', # probably won't publish this
+    url = 'http://github.com/louking/runningclub', 
     # could also include long_description, download_url, classifiers, etc.
 )
 

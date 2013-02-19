@@ -39,7 +39,7 @@ import argparse
 
 # home grown
 import version
-from running import racedb
+import racedb
 
 
 #----------------------------------------------------------------------
@@ -78,7 +78,7 @@ def main():
     '''
     update race information
     '''
-    parser = argparse.ArgumentParser(version='{0} {1}'.format('fsrc',version.__version__))
+    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('-r','--racedb',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
     parser.add_argument('-y','--year',help='year of races to list',default=None, type=int)
     args = parser.parse_args()
