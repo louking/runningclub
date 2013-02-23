@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ###########################################################################################
-# renderresults - render result information within database
+# renderstandings - render result information within database for standings
 #
 #	Date		Author		Reason
 #	----		------		------
@@ -22,8 +22,8 @@
 #
 ###########################################################################################
 '''
-renderresults - render result information within database
-===========================================================
+renderstandings - render result information within database for standings
+==============================================================================
 
 '''
 
@@ -43,42 +43,11 @@ import version
 import racedb
 
 
-#----------------------------------------------------------------------
-def rendertime(dbtime): 
-#----------------------------------------------------------------------
-    '''
-    create time for display
-    
-    :param dbtime: time in seconds
-    '''
-    
-    rettime = ''
-    fracdbtime = dbtime - int(dbtime)
-    if fracdbtime > 0.0:
-        rettime = '.{0:02d}'.format(int(round(fracdbtime*100)))
-
-    remdbtime = int(dbtime)
-    
-    thisunit = remdbtime%60
-    firstthru = True
-    while remdbtime > 0:
-        if not firstthru:
-            rettime = ':' + rettime
-        firstthru = False
-        rettime = '{0:02d}'.format(thisunit) + rettime
-        remdbtime /= 60
-        thisunit = remdbtime%60
-        
-    while rettime[0] == '0':
-        rettime = rettime[1:]
-        
-    return rettime
-
 ########################################################################
-class BaseFileHandler():
+class BaseStandingsHandler():
 ########################################################################
     '''
-    Base FileHandler class -- this is an empty class, to be used as a
+    Base StandingsHandler class -- this is an empty class, to be used as a
     template for filehandler classes.  Each method must be replaced or enhanced.
     
     '''
@@ -98,14 +67,13 @@ class BaseFileHandler():
         * collect format for output
         * collect print line dict for output
         
-        format has format appropriate to output type, is passed back to self.render
         numraces has number of races
         
         :param gen: gender M or F
         :param seriesname: name of series
         :param seriesid: series.id
         :param year: year of races
-        :rtype: format, numraces
+        :rtype: numraces
         '''
 
         pass
@@ -204,10 +172,10 @@ class BaseFileHandler():
         pass
     
 ########################################################################
-class ListFileHandler():
+class ListStandingsHandler():
 ########################################################################
     '''
-    Like BaseFileHandler class, but adds addhandler method.
+    Like BaseStandingsHandler class, but adds addhandler method.
     
     file handler operations are done for multiple files
     '''
@@ -220,10 +188,10 @@ class ListFileHandler():
     def addhandler(self,fh):
     #----------------------------------------------------------------------
         '''
-        add derivative of BaseFileHandler to list of FileHandlers which
+        add derivative of BaseStandingsHandler to list of StandingsHandlers which
         will be processed
         
-        :param fh: derivative of BaseFileHandler
+        :param fh: derivative of BaseStandingsHandler
         '''
         
         self.fhlist.append(fh)
@@ -239,18 +207,21 @@ class ListFileHandler():
         * collect format for output
         * collect print line dict for output
         
-        format has format appropriate to output type, is passed back to self.render
         numraces has number of races
         
         :param gen: gender M or F
         :param seriesname: name of series
         :param seriesid: series.id
         :param year: year of races
-        :rtype: format, numraces
+        :rtype: numraces
         '''
-
+        
+        numraces = None
         for fh in self.fhlist:
-            fh.prepare(gen,seriesname,seriesid,year)
+            numraces = fh.prepare(gen,seriesname,seriesid,year)
+            
+        # ok to use the last one
+        return numraces
     
     #----------------------------------------------------------------------
     def clearline(self,gen):
@@ -354,17 +325,17 @@ class ListFileHandler():
             fh.close()
     
 ########################################################################
-class TxtFileHandler(BaseFileHandler):
+class TxtStandingsHandler(BaseStandingsHandler):
 ########################################################################
     '''
-    FileHandler for .txt files
+    StandingsHandler for .txt files
     
     :param session: database session
     '''
     #----------------------------------------------------------------------
     def __init__(self,session):
     #----------------------------------------------------------------------
-        BaseFileHandler.__init__(self,session)
+        BaseStandingsHandler.__init__(self,session)
         self.TXT = {}
         self.pline = {'F':{},'M':{}}
     
@@ -379,14 +350,13 @@ class TxtFileHandler(BaseFileHandler):
         * collect format for output
         * collect print line dict for output
         
-        format has format appropriate to output type, is passed back to self.render
         numraces has number of races
         
         :param gen: gender M or F
         :param seriesname: name of series
         :param seriesid: series.id
         :param year: year of races
-        :rtype: format, numraces
+        :rtype: numraces
         '''
         
         # open output file
@@ -397,19 +367,20 @@ class TxtFileHandler(BaseFileHandler):
         # render list of all races which will be in the series
         self.TXT[gen].write("FSRC {0}'s {1} {2} standings\n".format(rengen,year,seriesname))
         self.TXT[gen].write('\n')                
-        self.numraces = 0
-        for race in self.session.query(racedb.Race).join("series").filter(racedb.RaceResult.seriesid==seriesid).order_by(racedb.Race.racenum).all():
+        numraces = 0
+        self.racelist = []
+        for race in self.session.query(racedb.Race).join("series").filter(racedb.RaceSeries.seriesid==seriesid).order_by(racedb.Race.racenum).all():
+            self.racelist.append(race.racenum)
             self.TXT[gen].write('\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,race.date))
-            self.numraces += 1
+            numraces += 1
         self.TXT[gen].write('\n')
 
         # set up cols format string, and render header
         NAMELEN = 40
-        self.linefmt = '{place:5s} {name:' + str(NAMELEN) + 's} '
-        racenum = 1
-        for i in range(self.numraces):
-            self.linefmt += '{race' + str(racenum) + ':3s} '
-            racenum += 1
+        COLWIDTH = 5
+        self.linefmt = '{{place:5s}} {{name:{0}s}} '.format(NAMELEN)
+        for racenum in self.racelist:
+            self.linefmt += '{{race{0}:{1}s}} '.format(racenum,COLWIDTH)
         self.linefmt += '{total:10s}\n'
         
         self.clearline(gen)
@@ -417,13 +388,12 @@ class TxtFileHandler(BaseFileHandler):
         self.setname(gen,'')
         self.settotal(gen,'Total Pts.')
         
-        for i in range(self.numraces):
-            thisracenum = i+1
-            self.setrace(gen,thisracenum,thisracenum)
+        for racenum in self.racelist:
+            self.setrace(gen,racenum,racenum)
             
         self.render(gen)
 
-        return self.numraces
+        return numraces
     
     #----------------------------------------------------------------------
     def clearline(self,gen):
@@ -523,29 +493,31 @@ class TxtFileHandler(BaseFileHandler):
             self.TXT[gen].close()
     
 ########################################################################
-class ResultsRenderer():
+class StandingsRenderer():
 ########################################################################
     '''
-    ResultsRenderer collects results and provides rendering methods, for a single series
+    StandingsRenderer collects standings and provides rendering methods, for a single series
     
     :param session: database session
     :param seriesname: series.name
     :param seriesid: series.id
-    :param orderby: database field by which results should be ordered (e.g., racedb.RaceResult.time)
-    :param bydiv: True if results are to be tallied by division, in addition to by gender
+    :param orderby: database field by which standings should be ordered (e.g., racedb.RaceResult.time)
+    :param hightolow: True if ordering is high value to low value
+    :param bydiv: True if standings are to be tallied by division, in addition to by gender
     :param avgtie: True if tie points are averaged, else max points is used for both
     :param multiplier: race points are multiplied by this value
-    :param maxgenpoints: maximum number of points by gender for first place result.  If None, results are tallied directly
+    :param maxgenpoints: maximum number of points by gender for first place result.  If None, standings are tallied directly
     :param maxdivpoints: maximum number of points by division for first place result
     :param maxraces: maximum number of races run by a runner to be included in total points
     '''
     #----------------------------------------------------------------------
-    def __init__(self,session,seriesname,seriesid,orderby,bydiv,avgtie,multiplier=1,maxgenpoints=None,maxdivpoints=None,maxraces=None):
+    def __init__(self,session,seriesname,seriesid,orderby,hightolow,bydiv,avgtie,multiplier=1,maxgenpoints=None,maxdivpoints=None,maxraces=None):
     #----------------------------------------------------------------------
         self.session = session
         self.seriesname = seriesname
         self.seriesid = seriesid
         self.orderby = orderby
+        self.hightolow = hightolow
         self.bydiv = bydiv
         self.avgtie = avgtie
         self.multiplier = multiplier
@@ -554,25 +526,27 @@ class ResultsRenderer():
         self.maxraces = maxraces
         
     #----------------------------------------------------------------------
-    def collectresults(self,racesprocessed,gen,raceid,byrunner,divrunner): 
+    def collectstandings(self,racesprocessed,gen,raceid,byrunner,divrunner): 
     #----------------------------------------------------------------------
         '''
-        collect results for this race / series
+        collect standings for this race / series
         
         in byrunner[name][type], points{race} entries are set to '' for race not run, to 0 for race run but no points given
         
         :param racesprocessed: number of races processed so far
         :param gen: gender, M or F
-        :param raceid: race.id to collect results for
-        :param byrunner: dict updated as runner results are collected {name:{'bygender':[points1,points2,...],'bydivision':[points1,points2,...]}}
+        :param raceid: race.id to collect standings for
+        :param byrunner: dict updated as runner standings are collected {name:{'bygender':[points1,points2,...],'bydivision':[points1,points2,...]}}
         :param divrunner: dict updated with runner names by division {div:[runner1,runner2,...],...}
-        :rtype: number of results processed for this race / series
+        :rtype: number of standings processed for this race / series
         '''
         numresults = 0
     
         # get all the results currently in the database
         # byrunner = {name:{'bygender':[points,points,...],'bydivision':[points,points,...]}, ...}
         allresults = self.session.query(racedb.RaceResult).order_by(self.orderby).filter_by(raceid=raceid,seriesid=self.seriesid,gender=gen).all()
+        if self.hightolow: allresults.sort(reverse=True)
+        
         for resultndx in range(len(allresults)):
             numresults += 1
             result = allresults[resultndx]
@@ -615,10 +589,45 @@ class ResultsRenderer():
             
             # if result was ordered by agpercent, agpercent is used -- assume no divisions
             elif self.orderby == racedb.RaceResult.agpercent:
-                pass
+                # some combinations don't make sense, and have been commented out
+                # TODO: verify combinations in updaterace.py
+                
+                ## if result points depend on the number of runners, update maxgenpoints
+                #if byrunner:
+                #    maxgenpoints = len(allresults)
+                #
+                ## if starting at the top (i.e., maxgenpoints is non-zero, accumulate points accordingly
+                #if maxgenpoints:
+                #    genpoints = self.multiplier*(self.maxgenpoints+1-result.genderplace)
+                #
+                ## otherwise, accumulate from the bottom (this should never happen)
+                #else:
+                genpoints = int(round(self.multiplier*result.agpercent))
+                
+                byrunner[name]['bygender'].append(max(genpoints,0))
+                #if self.bydiv:
+                #    divpoints = self.multiplier*(self.maxdivpoints+1-result.divisionplace)
+                #    byrunner[name]['bydivision'].append(max(divpoints,0))
             
             elif self.orderby == racedb.RaceResult.agtime:
-                pass
+                # TODO: this section needs to be updated (for decathlon), currently cut/paste from orderby time
+                
+                # if result points depend on the number of runners, update maxgenpoints
+                if byrunner:
+                    maxgenpoints = len(allresults)
+                
+                # if starting at the top (i.e., maxgenpoints is non-zero, accumulate points accordingly
+                if maxgenpoints:
+                    genpoints = self.multiplier*(self.maxgenpoints+1-result.genderplace)
+                
+                # otherwise, accumulate from the bottom (this should never happen)
+                else:
+                    genpoints = self.multiplier*result.genderplace
+                
+                byrunner[name]['bygender'].append(max(genpoints,0))
+                if self.bydiv:
+                    divpoints = self.multiplier*(self.maxdivpoints+1-result.divisionplace)
+                    byrunner[name]['bydivision'].append(max(divpoints,0))
             
             else:
                 raise parameterError, 'results must be ordered by time, agtime or agpercent'
@@ -629,7 +638,7 @@ class ResultsRenderer():
     def renderseries(self,fh): 
     #----------------------------------------------------------------------
         '''
-        render results for a single series
+        render standings for a single series
         
         fh object has the following methods
         * numraces = prepare(gender,seriesname,seriesid,year)
@@ -638,11 +647,11 @@ class ResultsRenderer():
         * setname(gender,name)
         * setrace(gender,racenum,result)
         * settotal(gender,total)
-        * render(gender)  puts results into a file handled by fh for gender
+        * render(gender)  puts standings into a file handled by fh for gender
         * skipline(gender) insert blank line
         * close()
         
-        :param fh: FileHandler object-like
+        :param fh: StandingsHandler object-like
         '''
 
         # collect divisions, if necessary
@@ -665,6 +674,7 @@ class ResultsRenderer():
             # collect data for each race, within byrunner dict
             # also track names of runners within each division
             byrunner = {}
+            divrunner = None
             if self.bydiv:
                 divrunner = {}
                 for div in divisions:
@@ -672,10 +682,10 @@ class ResultsRenderer():
                 
             racesprocessed = 0
             for race in self.session.query(racedb.Race).join("results").all():
-                self.collectresults(racesprocessed,gen,race.id,byrunner,divrunner)
+                self.collectstandings(racesprocessed,gen,race.id,byrunner,divrunner)
                 racesprocessed += 1
                 
-            # render results
+            # render standings
             # first by division
             if self.bydiv:
                 fh.clearline(gen)
@@ -720,37 +730,37 @@ class ResultsRenderer():
                     # skip line between divisions
                     fh.skipline(gen)
                         
-                # then overall
+            # then overall
+            fh.clearline(gen)
+            fh.setplace(gen,'Place')
+            fh.setname(gen,'Overall')
+            fh.render(gen)
+            
+            # calculate runner total points
+            bypoints = []
+            for name in byrunner:
+                racetotals = byrunner[name]['bygender'][:]    # make a copy
+                racetotals.sort(reverse=True)
+                racetotals = [r for r in racetotals if type(r)==int]
+                totpoints = sum(racetotals[:min(self.maxraces,len(racetotals))])
+                bypoints.append((totpoints,name))
+            
+            # sort runners by total points and render
+            bypoints.sort(reverse=True)
+            thisplace = 1
+            for runner in bypoints:
+                totpoints,name = runner
                 fh.clearline(gen)
-                fh.setplace(gen,'Place')
-                fh.setname(gen,'Overall')
+                fh.setplace(gen,thisplace)
+                thisplace += 1
+                fh.setname(gen,name)
+                fh.settotal(gen,totpoints)
+                racenum = 1
+                for pts in byrunner[name]['bygender']:
+                    fh.setrace(gen,racenum,pts)
+                    racenum += 1
                 fh.render(gen)
-                
-                # calculate runner total points
-                bypoints = []
-                for name in byrunner:
-                    racetotals = byrunner[name]['bygender'][:]    # make a copy
-                    racetotals.sort(reverse=True)
-                    racetotals = [r for r in racetotals if type(r)==int]
-                    totpoints = sum(racetotals[:min(self.maxraces,len(racetotals))])
-                    bypoints.append((totpoints,name))
-                
-                # sort runners by total points and render
-                bypoints.sort(reverse=True)
-                thisplace = 1
-                for runner in bypoints:
-                    totpoints,name = runner
-                    fh.clearline(gen)
-                    fh.setplace(gen,thisplace)
-                    thisplace += 1
-                    fh.setname(gen,name)
-                    fh.settotal(gen,totpoints)
-                    racenum = 1
-                    for pts in byrunner[name]['bygender']:
-                        fh.setrace(gen,racenum,pts)
-                        racenum += 1
-                    fh.render(gen)
-                fh.skipline(gen)
+            fh.skipline(gen)
                         
         # done with rendering
         fh.close()
@@ -771,21 +781,19 @@ def main():
     
     # get filtered series, which have any results
     sfilter = {'active':True}
-    if args.series:
-        sfilter['name'] = arg.series
     theseseries = session.query(racedb.Series).filter_by(**sfilter).join("results").all()
     
-    fh = ListFileHandler()
-    fh.addhandler(TxtFileHandler(session))
+    fh = ListStandingsHandler()
+    fh.addhandler(TxtStandingsHandler(session))
     
     for series in theseseries:
         # orderby parameter is specified by the series
         orderby = getattr(racedb.RaceResult,series.orderby)
         
-        # render the results, according to series specifications
-        rr = ResultsRenderer(session,series.name,series.id,orderby,series.divisions,
-                             series.averagetie,multiplier=series.multiplier,maxgenpoints=series.maxgenpoints,
-                             maxdivpoints=series.maxdivpoints,maxraces=series.maxraces)
+        # render the standings, according to series specifications
+        rr = StandingsRenderer(session,series.name,series.id,orderby,series.hightolow,series.divisions,
+                               series.averagetie,multiplier=series.multiplier,maxgenpoints=series.maxgenpoints,
+                               maxdivpoints=series.maxdivpoints,maxraces=series.maxraces)
         rr.renderseries(fh)
 
     session.close()

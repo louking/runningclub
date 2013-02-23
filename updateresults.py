@@ -123,7 +123,7 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
         # for members and inactivemembers, get name, id and genderfrom database (will replace that which was used in results file)
         if foundmember:
             name,ascdob = foundmember
-            if name != result['name']:
+            if CLOSECSV and name != result['name']:
                 CLOSECSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob})
         elif foundinactive:
             name,ascdob = foundinactive
@@ -166,14 +166,14 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
         bygender[gender].append(result)
         resulttime = result['time']
         if foundmember or foundinactive:
-            raceresult = racedb.RaceResult(runnerid,race.id,series.id,resulttime,gender,None,None,len(overall),len(bygender[gender]))
+            raceresult = racedb.RaceResult(runnerid,race.id,series.id,resulttime,gender,agegradeage,None,None,len(overall),len(bygender[gender]))
         else:
-            raceresult = racedb.RaceResult(0,race.id,series.id,resulttime,gender,None,None,len(overall),len(bygender[gender]),runnername=name)
+            raceresult = racedb.RaceResult(0,race.id,series.id,resulttime,gender,agegradeage,None,None,len(overall),len(bygender[gender]),runnername=name)
             
         # always add age grade to result if we know the age
         # we will decide whether to render, later based on series.calcagegrade, in another script
         if agegradeage:
-            raceresult.agpercent,raceresult.agtime = ag.agegrade(agegradeage,gender,race.distance,resulttime)
+            raceresult.agpercent,raceresult.agtime,raceresult.agfactor = ag.agegrade(agegradeage,gender,race.distance,resulttime)
         
         if series.divisions:
             # member's age to determine division is the member's age on Jan 1
@@ -204,7 +204,7 @@ def main():
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
     parser.add_argument('-f','--resultsfile',help='file with results information',default=None)
     parser.add_argument('-r','--racedbfile',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
-    #parser.add_argument('-d','--delete',help='delete results for this race',action='store_true')
+    parser.add_argument('-d','--delete',help='delete results for this race',action='store_true')
     parser.add_argument('-c','--cutoff',help='cutoff for close match lookup (default %(default)0.2f)',type=float,default=0.7)
     parser.add_argument('--debug',help='if set, create updateraces.txt for debugging',action='store_true')
     args = parser.parse_args()
@@ -233,11 +233,21 @@ def main():
         return
     
     # make sure the user really wants to do this
-    result = session.query(racedb.RaceResult).filter_by(raceid=raceid).first()
+    results = session.query(racedb.RaceResult).filter_by(raceid=raceid).all()
     exists = ''
-    if result:
-        exists = ' (NOTE: race results already entered, and will be overwritten)'
-    answer = raw_input('update results for {0} {1}{2}? (type yes) '.format(race.year,race.name,exists))
+    if results:
+        if args.delete:
+            exists = '(previously entered race results will be deleted)'
+        else:
+            exists = '(NOTE: race results already entered, and will be overwritten)'
+    elif args.delete:
+        print '*** no race results found for {0} {1}'.format(race.year,race.name)
+        return
+    
+    action = 'update'
+    if args.delete:
+        action = 'delete'
+    answer = raw_input('{0} results for {1} {2} {3}? (type yes) '.format(action,race.year,race.name,exists))
     if answer != 'yes':
         print '*** race update aborted -- no changes made'
         return
@@ -246,43 +256,47 @@ def main():
     numdeleted = session.query(racedb.RaceResult).filter_by(raceid=raceid).delete()
     if numdeleted:
         print 'deleted {0} entries previously recorded'.format(numdeleted)
-    
-    # TODO: there's probably a cleaner way to do this filter
-    raceseries = session.query(racedb.RaceSeries).filter_by(raceid=raceid,active=True).all()
-    seriesids = [s.seriesid for s in raceseries]
-    theseseries = []
-    for seriesid in seriesids:
-        theseseries.append(session.query(racedb.Series).filter_by(id=seriesid,active=True).first())
-    
-    # set up logging files
-    logdir = os.path.dirname(resultsfile)
-    resultfilebase = os.path.basename(resultsfile)
-    inactlogname = 'inactive-{0}.txt'.format(os.path.splitext(resultfilebase)[0])
-    INACT = open(os.path.join(logdir,inactlogname),'w')
-    missedlogname = 'missed-{0}.txt'.format(os.path.splitext(resultfilebase)[0])
-    MISSED = open(os.path.join(logdir,missedlogname),'w')
-    closelogname = 'close-{0}.csv'.format(os.path.splitext(resultfilebase)[0])
-    CLOSE = open(os.path.join(logdir,closelogname),'wb')
-    CLOSECSV = csv.DictWriter(CLOSE,['results name','results age','database name','database dob'])
-    CLOSECSV.writeheader()
-    
-    # for each series - 'series' describes how to tabulate the results
-    for series in theseseries:
-        # tabulate each race for which there are results, if it hasn't been tabulated before
-        print 'tabulating {0}'.format(series.name)
-        numentries = tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSECSV)
-        print '   {0} entries processed'.format(numentries)
         
-        # only collect log entries for the first series
-        if INACT:
-            INACT.close()
-            INACT = None
-        if MISSED:
-            MISSED.close()
-            MISSED = None
-        if CLOSECSV:
-            CLOSE.close()
-            CLOSECSV = None
+    
+    # only actually update results if --delete option not selected
+    if not args.delete:
+        
+        # TODO: there's probably a cleaner way to do this filter
+        raceseries = session.query(racedb.RaceSeries).filter_by(raceid=raceid,active=True).all()
+        seriesids = [s.seriesid for s in raceseries]
+        theseseries = []
+        for seriesid in seriesids:
+            theseseries.append(session.query(racedb.Series).filter_by(id=seriesid,active=True).first())
+        
+        # set up logging files
+        logdir = os.path.dirname(resultsfile)
+        resultfilebase = os.path.basename(resultsfile)
+        inactlogname = 'inactive-{0}.txt'.format(os.path.splitext(resultfilebase)[0])
+        INACT = open(os.path.join(logdir,inactlogname),'w')
+        missedlogname = 'missed-{0}.txt'.format(os.path.splitext(resultfilebase)[0])
+        MISSED = open(os.path.join(logdir,missedlogname),'w')
+        closelogname = 'close-{0}.csv'.format(os.path.splitext(resultfilebase)[0])
+        CLOSE = open(os.path.join(logdir,closelogname),'wb')
+        CLOSECSV = csv.DictWriter(CLOSE,['results name','results age','database name','database dob'])
+        CLOSECSV.writeheader()
+        
+        # for each series - 'series' describes how to tabulate the results
+        for series in theseseries:
+            # tabulate each race for which there are results, if it hasn't been tabulated before
+            print 'tabulating {0}'.format(series.name)
+            numentries = tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSECSV)
+            print '   {0} entries processed'.format(numentries)
+            
+            # only collect log entries for the first series
+            if INACT:
+                INACT.close()
+                INACT = None
+            if MISSED:
+                MISSED.close()
+                MISSED = None
+            if CLOSECSV:
+                CLOSE.close()
+                CLOSECSV = None
     
     # and we're through
     session.commit()

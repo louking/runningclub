@@ -136,7 +136,7 @@ def updateseries(session, fileraces):
         # add or update series in database
         thisseries = allseries[seriesname]
         series = racedb.Series(seriesname,thisseries['members-only'],thisseries['overall'],thisseries['divisions'],thisseries['age grade'],
-                               thisseries['order by'],thisseries['average tie'],thisseries['max races'],thisseries['multiplier'],
+                               thisseries['order by'],thisseries['high to low'],thisseries['average tie'],thisseries['max races'],thisseries['multiplier'],
                                thisseries['max gender'], thisseries['max division'],thisseries['max by runners'])
         added = racedb.insert_or_update(session,racedb.Series,series,skipcolumns=['id'],name=series.name)
         

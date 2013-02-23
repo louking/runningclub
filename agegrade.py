@@ -147,7 +147,7 @@ class AgeGrade():
         :param distmiles: distance (miles)
         :param time: time for distance (seconds)
         
-        :rtype: (age performance percentage, age graded result) - percentage is between 0 and 100, result is in seconds
+        :rtype: (age performance percentage, age graded result, age grade factor) - percentage is between 0 and 100, result is in seconds
         '''
         
         # check for some input errors
@@ -196,7 +196,7 @@ class AgeGrade():
         # return age grade statistics
         agpercentage = 100*(openstd/factor)/time
         agresult = time*factor
-        return agpercentage,agresult
+        return agpercentage,agresult,factor
 
 #----------------------------------------------------------------------
 def main(): 

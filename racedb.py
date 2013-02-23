@@ -30,6 +30,7 @@ racedb has the following tables.  See classes of same name (with camelcase) for 
     * runner
     * race
     * raceresult
+    * raceseries
     * series
     * divisions
        
@@ -217,23 +218,14 @@ class Series(Base):
 ########################################################################
     '''
     * series (attributes)
-        * name
-        * membersonly
-        * overall
-        * divisions
-        * agegrade
-        * averagetie
-        * multiplier
-        * maxgenpoints
-        * maxdivpoints
-        * maxraces
-        # TODO: add avgtie,multiplier,maxgenpoints,maxdivpoints,maxraces attributes to Series
 
     :param name: series name
     :param membersonly: True if series applies to club members only
     :param overall: True if overall results are to be calculated
     :param divisions: True if division results are to be calculated
     :param agegrade: True if age graded results are to be calculated
+    :param orderby: text name of RaceResult field to order results by
+    :param hightolow: True if results should be ordered high to low based on orderby field
     :param averagetie: True if points for ties are to be averaged, else higher points awarded to all tied results
     :param maxraces: if set, maximum number of races which are included in total (if not set, all races are included)
     :param multiplier: multiply base point total by this value
@@ -249,6 +241,7 @@ class Series(Base):
     calcdivisions = Column(Boolean)
     calcagegrade = Column(Boolean)
     orderby = Column(String(15))
+    hightolow = Column(Boolean)
     averagetie = Column(Boolean)
     maxraces = Column(Integer)
     multiplier = Column(Integer)
@@ -261,7 +254,7 @@ class Series(Base):
     results = relationship("RaceResult", backref='series', cascade="all, delete, delete-orphan")
 
     #----------------------------------------------------------------------
-    def __init__(self, name, membersonly, overall, divisions, agegrade, orderby, averagetie, maxraces, multiplier, maxgenpoints, maxdivpoints, maxbynumrunners):
+    def __init__(self, name, membersonly, overall, divisions, agegrade, orderby, hightolow, averagetie, maxraces, multiplier, maxgenpoints, maxdivpoints, maxbynumrunners):
     #----------------------------------------------------------------------
         
         self.name = name
@@ -270,6 +263,7 @@ class Series(Base):
         self.calcdivisions = divisions
         self.calcagegrade = agegrade
         self.orderby = orderby
+        self.hightolow = hightolow
         self.averagetie = averagetie
         self.maxraces = maxraces
         self.multiplier = multiplier
@@ -281,9 +275,9 @@ class Series(Base):
     #----------------------------------------------------------------------
     def __repr__(self):
     #----------------------------------------------------------------------
-        return "<Series('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',active='%s')>" % (
+        return "<Series('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',active='%s')>" % (
             self.name, self.membersonly, self.calcoverall, self.calcdivisions, self.calcagegrade,
-            self.orderby, self.averagetie, self.maxraces, self.multiplier, self.maxgenpoints,
+            self.orderby, self.hightolow, self.averagetie, self.maxraces, self.multiplier, self.maxgenpoints,
             self.maxdivpoints, self.maxbynumrunners, self.active
             )
     
@@ -297,6 +291,7 @@ class RaceResult(Base):
         * raceid
         * seriesid
         * gender
+        * agage
         * divisionlow
         * divisionhigh
         * time (seconds)
@@ -311,6 +306,7 @@ class RaceResult(Base):
     :param seriesid: series.id
     :param time: time in seconds
     :param gender: M or F
+    :param agage: age on race day
     :param divisionlow: inclusive age at low end of division (may be 0)
     :param divisionhigh: inclusive age at high end of division (may be 99)
     :param overallplace: runner's place in race overall
@@ -327,9 +323,11 @@ class RaceResult(Base):
     raceid = Column(Integer, ForeignKey('race.id'))
     seriesid = Column(Integer, ForeignKey('series.id'))
     gender = Column(String(1))
+    agage = Column(Integer)
     divisionlow = Column(Integer)
     divisionhigh = Column(Integer)
     time = Column(Float)
+    agfactor = Column(Float)
     agtime = Column(Float)
     agpercent = Column(Float)
     overallplace = Column(Integer)
@@ -338,7 +336,7 @@ class RaceResult(Base):
     __table_args__ = (UniqueConstraint('runnerid', 'runnername', 'raceid', 'seriesid'),)
 
     #----------------------------------------------------------------------
-    def __init__(self, runnerid, raceid, seriesid, time, gender, divisionlow, divisionhigh, overallplace, genderplace, runnername=None, divisionplace=None, agtime=None, agpercent=None):
+    def __init__(self, runnerid, raceid, seriesid, time, gender, agage, divisionlow, divisionhigh, overallplace, genderplace, runnername=None, divisionplace=None, agfactor=None, agtime=None, agpercent=None):
     #----------------------------------------------------------------------
         
         self.runnerid = runnerid
@@ -347,20 +345,22 @@ class RaceResult(Base):
         self.runnername = runnername
         self.time = time
         self.gender = gender
+        self.agage = agage
         self.divisionlow = divisionlow
         self.divisionhigh = divisionhigh
         self.overallplace = overallplace
         self.genderplace = genderplace
         self.divisionplace = divisionplace
+        self.agfactor = agfactor
         self.agtime = agtime
         self.agpercent = agpercent
 
     #----------------------------------------------------------------------
     def __repr__(self):
     #----------------------------------------------------------------------
-        return "<RaceResult('%s','%s','%s','%s','%s',div='(%s,%s)','%s','%s','%s','%s','%s','%s')>" % (
-            self.runnerid, self.runnername, self.raceid, self.seriesid, self.gender, self.divisionlow, self.divisionhigh,
-            self.time, self.overallplace, self.genderplace, self.divisionplace, self.agtime, self.agpercent)
+        return "<RaceResult('%s','%s','%s','%s','%s','%s',div='(%s,%s)','%s','%s','%s','%s','%s','%s','%s')>" % (
+            self.runnerid, self.runnername, self.raceid, self.seriesid, self.gender, self.agage, self.divisionlow, self.divisionhigh,
+            self.time, self.overallplace, self.genderplace, self.divisionplace, self.agfactor, self.agtime, self.agpercent)
     
 ########################################################################
 class RaceSeries(Base):
