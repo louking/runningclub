@@ -47,6 +47,7 @@ import racedb
 import clubmember
 import raceresults
 import agegrade
+import render
 from loutilities import timeu
 
 # module globals
@@ -72,6 +73,9 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
     :rtype: number of entries processed
     '''
     
+    # get precision for time rendering
+    timeprecision,agtimeprecision = render.getprecision(race.distance)
+    
     # get divisions for this series, if appropriate
     if series.divisions:
         alldivs = session.query(racedb.Divisions).filter_by(seriesid=series.id,active=True).all()
@@ -83,24 +87,28 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
         for div in alldivs:
             divisions.append((div.divisionlow,div.divisionhigh))
 
-        division = {'F':collections.OrderedDict(),'M':collections.OrderedDict()}
-        # force order of dict.  later delete empty divisions
-        for gender in ['F','M']:
-            for thisdiv in divisions:
-                division[gender][thisdiv] = []
+        # TODO: remove dead code
+        #division = {'F':collections.OrderedDict(),'M':collections.OrderedDict()}
+        ## force order of dict.  later delete empty divisions
+        #for gender in ['F','M']:
+        #    for thisdiv in divisions:
+        #        division[gender][thisdiv] = []
 
-    overall = []
-    bygender = {'F':[], 'M':[]}
-    
     # loop through result entries, collecting overall, bygender and division results
     rr = raceresults.RaceResults(resultsfile,race.distance)
     numentries = 0
+    results = []
     while True:
         try:
             result = rr.next()
+            results.append(result)
         except StopIteration:
             break
         numentries += 1
+    
+    # loop through result entries, collecting overall, bygender, division and agegrade results
+    for rndx in range(len(results)):
+        result = results[rndx]
         
         # some races are for members only
         # for these, don't tabulate unless member found
@@ -151,33 +159,34 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
             agegradeage = racedate.year - dob.year - int((racedate.month, racedate.day) < (dob.month, dob.day))
             
         # for non-members, set agegrade age based on results file
+        # if non-member, no division awards, because age as of Jan 1 is not known
         # TODO: there may be misspellings in the results file for non-members -- if this occurs, may need to make this more robust
         else:
             name = result['name']
             gender = result['gender']
+            divage = None
+            
             try:
                 agegradeage = int(result['age'])
             except:
                 agegradeage = None
 
         # logic assumes this is always set
-        #if series.overall:
-        overall.append(result)
-        bygender[gender].append(result)
         resulttime = result['time']
         if foundmember or foundinactive:
-            raceresult = racedb.RaceResult(runnerid,race.id,series.id,resulttime,gender,agegradeage,None,None,len(overall),len(bygender[gender]))
+            raceresult = racedb.RaceResult(runnerid,race.id,series.id,resulttime,gender,agegradeage)
         else:
-            raceresult = racedb.RaceResult(0,race.id,series.id,resulttime,gender,agegradeage,None,None,len(overall),len(bygender[gender]),runnername=name)
-            
+            raceresult = racedb.RaceResult(0,race.id,series.id,resulttime,gender,agegradeage,runnername=name)
+
         # always add age grade to result if we know the age
         # we will decide whether to render, later based on series.calcagegrade, in another script
         if agegradeage:
             raceresult.agpercent,raceresult.agtime,raceresult.agfactor = ag.agegrade(agegradeage,gender,race.distance,resulttime)
-        
+
         if series.divisions:
             # member's age to determine division is the member's age on Jan 1
             # if member doesn't give date of birth for membership list, member is not eligible for division awards
+            # if non-member, also no division awards, because age as of Jan 1 is not known
             age = divage    # None if not available
             if age:
                 # linear search for correct division
@@ -185,15 +194,141 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
                     divlow = thisdiv[0]
                     divhigh = thisdiv[1]
                     if age in range(divlow,divhigh+1):
-                        division[gender][thisdiv].append(result)
                         raceresult.divisionlow = divlow
                         raceresult.divisionhigh = divhigh
-                        raceresult.divisionplace = len(division[gender][thisdiv])
                         break
-        
-        # update database with result
+
+        # make result persistent
         session.add(raceresult)
         
+    # process overall and bygender results, sorted by time
+    # TODO: is series.overall vs. series.orderby=='time' redundant?  same questio for series.agegrade vs. series.orderby=='agtime'
+    if series.orderby == 'time':
+        # get all the results which have been stored in the database for this race/series
+        ### TODO: use series.orderby, series.hightolow
+        dbresults = session.query(racedb.RaceResult).filter_by(raceid=race.id,seriesid=series.id).order_by(racedb.RaceResult.time).all()
+        numresults = len(dbresults)
+        for rrndx in range(numresults):
+            raceresult = dbresults[rrndx]
+            
+            # set place if it has not been set before
+            # place may have been determined at previous iteration, if a tie was detected
+            if not raceresult.overallplace:
+                thisplace = rrndx+1
+                tieindeces = [rrndx]
+                
+                # detect tie in subsequent results based on rendering,
+                # which rounds to a specific precision based on distance
+                time = render.rendertime(raceresult.time,timeprecision)
+                for tiendx in range(rrndx+1,numresults):
+                    if render.rendertime(dbresults[tiendx].time,timeprecision) != time:
+                        break
+                    tieindeces.append(tiendx)
+                lasttie = tieindeces[-1] + 1
+                for tiendx in tieindeces:
+                    numsametime = len(tieindeces)
+                    if numsametime > 1 and series.averagetie:
+                        dbresults[tiendx].overallplace = (thisplace+lasttie) / 2.0
+                    else:
+                        dbresults[tiendx].overallplace = thisplace
+
+        for gender in ['F','M']:
+            dbresults = session.query(racedb.RaceResult).filter_by(raceid=race.id,seriesid=series.id,gender=gender).order_by(racedb.RaceResult.time).all()
+
+            numresults = len(dbresults)
+            for rrndx in range(numresults):
+                raceresult = dbresults[rrndx]
+            
+                # set place if it has not been set before
+                # place may have been determined at previous iteration, if a tie was detected
+                if not raceresult.genderplace:
+                    thisplace = rrndx+1
+                    tieindeces = [rrndx]
+                    
+                    # detect tie in subsequent results based on rendering,
+                    # which rounds to a specific precision based on distance
+                    time = render.rendertime(raceresult.time,timeprecision)
+                    for tiendx in range(rrndx+1,numresults):
+                        if render.rendertime(dbresults[tiendx].time,timeprecision) != time:
+                            break
+                        tieindeces.append(tiendx)
+                    lasttie = tieindeces[-1] + 1
+                    for tiendx in tieindeces:
+                        numsametime = len(tieindeces)
+                        if numsametime > 1 and series.averagetie:
+                            dbresults[tiendx].genderplace = (thisplace+lasttie) / 2.0
+                        else:
+                            dbresults[tiendx].genderplace = thisplace
+
+        if series.divisions:
+            for gender in ['F','M']:
+                
+                # linear search for correct division
+                for thisdiv in divisions:
+                    divlow = thisdiv[0]
+                    divhigh = thisdiv[1]
+
+                    dbresults = session.query(racedb.RaceResult)  \
+                                  .filter_by(raceid=race.id,seriesid=series.id,gender=gender,divisionlow=divlow,divisionhigh=divhigh) \
+                                  .order_by(racedb.RaceResult.time).all()
+        
+                    numresults = len(dbresults)
+                    for rrndx in range(numresults):
+                        raceresult = dbresults[rrndx]
+
+                        # set place if it has not been set before
+                        # place may have been determined at previous iteration, if a tie was detected
+                        if not raceresult.divisionplace:
+                            thisplace = rrndx+1
+                            tieindeces = [rrndx]
+                            
+                            # detect tie in subsequent results based on rendering,
+                            # which rounds to a specific precision based on distance
+                            time = render.rendertime(raceresult.time,timeprecision)
+                            for tiendx in range(rrndx+1,numresults):
+                                if render.rendertime(dbresults[tiendx].time,timeprecision) != time:
+                                    break
+                                tieindeces.append(tiendx)
+                            lasttie = tieindeces[-1] + 1
+                            for tiendx in tieindeces:
+                                numsametime = len(tieindeces)
+                                if numsametime > 1 and series.averagetie:
+                                    dbresults[tiendx].divisionplace = (thisplace+lasttie) / 2.0
+                                else:
+                                    dbresults[tiendx].divisionplace = thisplace
+
+    # process age grade results, ordered by agtime
+    elif series.orderby == 'agtime':
+        for gender in ['F','M']:
+            dbresults = session.query(racedb.RaceResult).filter_by(raceid=race.id,seriesid=series.id,gender=gender).order_by(racedb.RaceResult.agtime).all()
+
+            numresults = len(dbresults)
+            for rrndx in range(numresults):
+                raceresult = dbresults[rrndx]
+            
+                # set place if it has not been set before
+                # place may have been determined at previous iteration, if a tie was detected
+                if not raceresult.agtimeplace:
+                    thisplace = rrndx+1
+                    tieindeces = [rrndx]
+                    
+                    # detect tie in subsequent results based on rendering,
+                    # which rounds to a specific precision based on distance
+                    time = render.rendertime(raceresult.agtime,agtimeprecision)
+                    for tiendx in range(rrndx+1,numresults):
+                        if render.rendertime(dbresults[tiendx].agtime,agtimeprecision) != time:
+                            break
+                        tieindeces.append(tiendx)
+                    lasttie = tieindeces[-1] + 1
+                    for tiendx in tieindeces:
+                        numsametime = len(tieindeces)
+                        if numsametime > 1 and series.averagetie:
+                            dbresults[tiendx].agtimeplace = (thisplace+lasttie) / 2.0
+                            #if dbresults[tiendx].agtimeplace == (thisplace+lasttie) / 2:
+                            #    dbresults[tiendx].agtimeplace = int(dbresults[tiendx].agtimeplace)
+                        else:
+                            dbresults[tiendx].agtimeplace = thisplace
+
     # return number of entries processed
     return numentries
 

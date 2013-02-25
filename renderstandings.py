@@ -705,10 +705,14 @@ class StandingsRenderer():
                     # calculate runner total points
                     bypoints = []
                     for name in divrunner[div]:
+                        # convert each race result to int if possible
+                        byrunner[name]['bydivision'] = [int(r) if type(r)==float and r==int(r) else r for r in byrunner[name]['bydivision']]
                         racetotals = byrunner[name]['bydivision'][:]    # make a copy
                         racetotals.sort(reverse=True)
-                        racetotals = [r for r in racetotals if type(r)==int]
+                        # total numbers only, and convert to int if possible
+                        racetotals = [r for r in racetotals if type(r) in [int,float]]
                         totpoints = sum(racetotals[:min(self.maxraces,len(racetotals))])
+                        totpoints = int(totpoints) if totpoints == int(totpoints) else totpoints
                         bypoints.append((totpoints,name))
                     
                     # sort runners within division by total points and render
@@ -739,10 +743,14 @@ class StandingsRenderer():
             # calculate runner total points
             bypoints = []
             for name in byrunner:
+                # convert each race result to int if possible
+                byrunner[name]['bygender'] = [int(r) if type(r)==float and r==int(r) else r for r in byrunner[name]['bygender']]
                 racetotals = byrunner[name]['bygender'][:]    # make a copy
                 racetotals.sort(reverse=True)
-                racetotals = [r for r in racetotals if type(r)==int]
+                # total numbers only, and convert to int if possible
+                racetotals = [r for r in racetotals if type(r) in [int,float]]
                 totpoints = sum(racetotals[:min(self.maxraces,len(racetotals))])
+                totpoints = int(totpoints) if totpoints == int(totpoints) else totpoints
                 bypoints.append((totpoints,name))
             
             # sort runners by total points and render

@@ -43,13 +43,13 @@ from loutilities import textreader
 # the value for a particular key contains a tuple with possible header entries which might be used to represent that key
 # TODO: get these from a configuration file
 fieldxform = {
-    'place':['place','pl'],
+    'place':['place','pl','gunplace'],
     'lastname':[['last','name'],'last name','lastname','last'],
     'firstname':[['first','name'],'first name','firstname','first'],
     'name':['name','runner'],
     'gender':['gender','sex','male/female','s'],
     'age':['age','ag'],
-    'time':['actual time','time','nettime'],
+    'time':['actual time','time','nettime','guntime'],
 }
 
 # exceptions for this module.  See __init__.py for package exceptions

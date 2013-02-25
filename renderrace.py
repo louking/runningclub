@@ -41,83 +41,7 @@ import argparse
 from runningclub import *
 import version
 import racedb
-
-
-#----------------------------------------------------------------------
-def getprecision(distance): 
-#----------------------------------------------------------------------
-    '''
-    get the precision for rendering, based on distance
-    
-    precision might be different for time vs. age group adjusted time
-    
-    :param distance: distance (miles)
-    :rtype: (timeprecision,agtimeprecision)
-    '''
-    
-    meterspermile = 1609    # close enough, and this is the value used in agegrade.py
-    
-    # 200 m plus fudge factor
-    if distance*meterspermile < 250:
-        timeprecision = 2
-        agtimeprecision = 2
-        
-    # 400 m plus fudge factor
-    elif distance*meterspermile < 450:
-        timeprecision = 1
-        agtimeprecision = 1
-        
-    # include 1 mile - shouldn't be rounding problem so no fudge factor required
-    elif distance <= 1.0:
-        timeprecision = 0
-        agtimeprecision = 1
-        
-    # distances > 1 mile
-    else:
-        timeprecision = 0
-        agtimeprecision = 0
-        
-    return timeprecision, agtimeprecision
-
-#----------------------------------------------------------------------
-def rendertime(dbtime,precision): 
-#----------------------------------------------------------------------
-    '''
-    create time for display
-    
-    :param dbtime: time in seconds
-    :param precision: number of places after decimal point
-    '''
-    
-    rettime = ''
-    if precision > 0:
-        fracdbtime = dbtime - int(dbtime)
-        fracformat = '.{{0:0{0}d}}'.format(precision)
-        multiplier = 10**precision
-        frac = int(round(fracdbtime*multiplier))
-        if frac < multiplier:
-            rettime = fracformat.format(frac)
-            remdbtime = int(dbtime)
-        else:
-            rettime = fracformat.format(0)
-            remdbtime = int(dbtime+1)
-    else:
-        remdbtime = int(round(dbtime))
-    
-    thisunit = remdbtime%60
-    firstthru = True
-    while remdbtime > 0:
-        if not firstthru:
-            rettime = ':' + rettime
-        firstthru = False
-        rettime = '{0:02d}'.format(thisunit) + rettime
-        remdbtime /= 60
-        thisunit = remdbtime%60
-        
-    while rettime[0] == '0':
-        rettime = rettime[1:]
-        
-    return rettime
+import render
 
 ########################################################################
 class BaseRaceHandler():
@@ -659,7 +583,7 @@ class RaceRenderer():
         # Get race information
         race = self.session.query(racedb.Race).filter_by(id=self.raceid).order_by(racedb.Race.racenum).first()
         year = race.year
-        timeprecision,agtimeprecision = getprecision(race.distance)
+        timeprecision,agtimeprecision = render.getprecision(race.distance)
         
         # open file, prepare header, etc
         fh.prepare(year,self.racename)
@@ -682,10 +606,10 @@ class RaceRenderer():
             thisplace += 1
             fh.setname(result.runner.name)
             fh.setage(result.agage)
-            fh.settime(rendertime(result.time,timeprecision))
+            fh.settime(render.rendertime(result.time,timeprecision))
             fh.setagfactor('{0:0.4f}'.format(result.agfactor))
             fh.setagpercent('{0:0.2f}'.format(result.agpercent))
-            fh.setagtime(rendertime(result.agtime,agtimeprecision))
+            fh.setagtime(render.rendertime(result.agtime,agtimeprecision))
             fh.render()
                         
         # done with rendering

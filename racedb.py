@@ -330,13 +330,14 @@ class RaceResult(Base):
     agfactor = Column(Float)
     agtime = Column(Float)
     agpercent = Column(Float)
-    overallplace = Column(Integer)
-    genderplace = Column(Integer)
-    divisionplace = Column(Integer)
+    overallplace = Column(Float)
+    genderplace = Column(Float)
+    divisionplace = Column(Float)
+    agtimeplace = Column(Float)
     __table_args__ = (UniqueConstraint('runnerid', 'runnername', 'raceid', 'seriesid'),)
 
     #----------------------------------------------------------------------
-    def __init__(self, runnerid, raceid, seriesid, time, gender, agage, divisionlow, divisionhigh, overallplace, genderplace, runnername=None, divisionplace=None, agfactor=None, agtime=None, agpercent=None):
+    def __init__(self, runnerid, raceid, seriesid, time, gender, agage, divisionlow=None, divisionhigh=None, overallplace=None, genderplace=None, runnername=None, divisionplace=None, agtimeplace=None, agfactor=None, agtime=None, agpercent=None):
     #----------------------------------------------------------------------
         
         self.runnerid = runnerid
@@ -351,6 +352,7 @@ class RaceResult(Base):
         self.overallplace = overallplace
         self.genderplace = genderplace
         self.divisionplace = divisionplace
+        self.agtimeplace = agtimeplace
         self.agfactor = agfactor
         self.agtime = agtime
         self.agpercent = agpercent
@@ -358,9 +360,10 @@ class RaceResult(Base):
     #----------------------------------------------------------------------
     def __repr__(self):
     #----------------------------------------------------------------------
-        return "<RaceResult('%s','%s','%s','%s','%s','%s',div='(%s,%s)','%s','%s','%s','%s','%s','%s','%s')>" % (
+        # TODO: too many unlabeled fields -- need to make this clearer
+        return "<RaceResult('%s','%s','%s','%s','%s','%s',div='(%s,%s)','%s','%s','%s','%s','%s','%s','%s','%s')>" % (
             self.runnerid, self.runnername, self.raceid, self.seriesid, self.gender, self.agage, self.divisionlow, self.divisionhigh,
-            self.time, self.overallplace, self.genderplace, self.divisionplace, self.agfactor, self.agtime, self.agpercent)
+            self.time, self.overallplace, self.genderplace, self.divisionplace, self.agtimeplace, self.agfactor, self.agtime, self.agpercent)
     
 ########################################################################
 class RaceSeries(Base):
