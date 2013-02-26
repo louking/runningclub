@@ -131,7 +131,7 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
         # for members and inactivemembers, get name, id and genderfrom database (will replace that which was used in results file)
         if foundmember:
             name,ascdob = foundmember
-            if CLOSECSV and name != result['name']:
+            if CLOSECSV and name.strip().lower() != result['name'].strip().lower():
                 CLOSECSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob})
         elif foundinactive:
             name,ascdob = foundinactive

@@ -406,6 +406,7 @@ class TxtRaceHandler(BaseRaceHandler):
         :param racename: name of race
         '''
         
+        # TODO: add sortby to output file name
         # open output file
         MF = {'F':'Women','M':'Men'}
         rengen = 'Overall'
