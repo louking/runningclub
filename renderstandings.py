@@ -522,7 +522,7 @@ class TxtStandingsHandler(BaseStandingsHandler):
 class XlStandingsHandler(BaseStandingsHandler):
 ########################################################################
     '''
-    StandingsHandler for .xlsx files
+    StandingsHandler for .xls files
     
     :param session: database session
     '''
@@ -653,9 +653,6 @@ class XlStandingsHandler(BaseStandingsHandler):
         '''
         
         pass    # noop for excel - avoid 'cell overwrite' exception
-        #for k in self.colnum:
-        #    c = self.colnum[k]
-        #    self.ws[gen].write(self.rownum[gen],c,None)
     
     #----------------------------------------------------------------------
     def setplace(self,gen,place,stylename='place'):
