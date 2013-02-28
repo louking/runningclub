@@ -424,7 +424,8 @@ class TxtRaceHandler(BaseRaceHandler):
         
         # render race
         self.TXT.write("{0} {1} - {2} results, ordered by {3}\n".format(year,racename,rengen,orderby))
-        self.TXT.write('\n')                
+        self.TXT.write('\tNOTE: these results only show the FSRC members who ran the race\n')
+        self.TXT.write('\n')
 
         # set up cols format string, and render header
         NAMELEN = 40
@@ -592,6 +593,7 @@ class XlRaceHandler(BaseRaceHandler):
         self.style = {
             'majorhdr': xlwt.easyxf('font: bold true, height 240'),
             'hdr': xlwt.easyxf('font: bold true, height 200'),
+            'note': xlwt.easyxf('font: height 200'),
             'bold': xlwt.easyxf('font: bold true'),
             'ctrhdr': xlwt.easyxf('font: bold true, height 200'),
             'place': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='general'),
@@ -678,7 +680,7 @@ class XlRaceHandler(BaseRaceHandler):
         self.ws.write(self.rownum,colnum,"{0} {1} - {2} results, ordered by {3}".format(year,racename,resulttype,ob),self.style['majorhdr'])
         self.rownum += 1
         colnum = 1
-        self.ws.write(self.rownum,colnum,"NOTE: these results may have been filtered by club members",self.style['hdr'])
+        self.ws.write(self.rownum,colnum,"NOTE: these results only show the FSRC members who ran the race",self.style['note'])
         self.rownum += 2
         
         # set up column numbers -- reset for each series
