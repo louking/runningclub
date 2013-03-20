@@ -39,8 +39,8 @@ from runningclub import *
 import version
 from loutilities import textreader
 
-# fields is a tuple of dict whose keys are the 'real' information we're interested in
-# the value for a particular key contains a tuple with possible header entries which might be used to represent that key
+# fieldxform is a dict whose keys are the 'real' information we're interested in
+# the value for a particular key contains a list with possible header entries which might be used to represent that key
 # TODO: get these from a configuration file
 fieldxform = {
     'place':['place','pl','gunplace'],

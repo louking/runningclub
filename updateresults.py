@@ -163,7 +163,7 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
         # TODO: there may be misspellings in the results file for non-members -- if this occurs, may need to make this more robust
         else:
             name = result['name']
-            gender = result['gender']
+            gender = result['gender'].upper()
             divage = None
             
             try:

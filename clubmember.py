@@ -102,9 +102,13 @@ class ClubMember():
             thismember['dob'] = dob
             thismember['gender'] = thisrow['Gender'].upper().strip()
             thismember['hometown'] = ', '.join([thisrow['City'].strip(),thisrow['State'].strip()])
-            if name not in self.members:
-                self.members[name] = []
-            self.members[name].append(thismember)    # allows for possibility that multiple members have same name
+            
+            # make self.memberskeys lower case
+            # lower case comparisons are always done, to avoid UPPER NAME issue, and any other case related issues
+            lowername = name.lower()
+            if lowername not in self.members:
+                self.members[lowername] = []
+            self.members[lowername].append(thismember)    # allows for possibility that multiple members have same name
     
     #----------------------------------------------------------------------
     def getmembers(self):
@@ -112,7 +116,7 @@ class ClubMember():
         '''
         returns dict keyed by names of members, each containing list of member entries with same name
         
-        :rtype: {name:[{'name':name,'dob':dateofbirth,'gender':'M'|'F','hometown':City,ST}]}
+        :rtype: {name.lower():[{'name':name,'dob':dateofbirth,'gender':'M'|'F','hometown':City,ST},...],...}
         '''
         
         return self.members
@@ -131,13 +135,12 @@ class ClubMember():
         :rtype: {'matchingmembers':member record list, 'exactmatch':boolean, 'closematches':member name list}
         '''
         
-        # TODO: could make self.lmembers be dict {'lmember':member,...} and search for lower case matches, to remove case from the uncertainty
-        closematches = difflib.get_close_matches(name,self.members.keys(),cutoff=self.cutoff)
+        closematches = difflib.get_close_matches(name.lower(),self.members.keys(),cutoff=self.cutoff)
         
         rval = {}
         if len(closematches) > 0:
             topmatch = closematches.pop(0)
-            rval['exactmatch'] = (name.lower() == topmatch.lower()) # ok to ignore case
+            rval['exactmatch'] = (name.lower() == topmatch.lower()) # ignore case
             rval['matchingmembers'] = self.members[topmatch][:] # make a copy
             rval['closematches'] = closematches[:]
             
@@ -174,7 +177,7 @@ class ClubMember():
                 break
             matches = self.getmember(checkmember)
             for member in matches['matchingmembers']:
-                # assume match for first member of correct age -- TODO: need to do better age checking
+                # assume match for first member of correct age -- TODO: need to do better age checking [what the heck did I mean here?]
                 asofdate_dt = tYmd.asc2dt(asofdate)
                 try:
                     memberdob = tYmd.asc2dt(member['dob'])
