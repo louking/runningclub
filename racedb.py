@@ -58,7 +58,8 @@ from runningclub import *
 import version
 from loutilities import timeu
 
-t = timeu.asctime('%Y-%m-%d')
+DBDATEFMT = '%Y-%m-%d'
+t = timeu.asctime(DBDATEFMT)
 
 #----------------------------------------------------------------------
 def setracedb(dbfilename):

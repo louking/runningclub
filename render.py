@@ -41,6 +41,11 @@ import argparse
 from runningclub import *
 import version
 import racedb
+DBDATEFMT = racedb.DBDATEFMT
+from loutilities import timeu
+
+dbtime = timeu.asctime(DBDATEFMT)
+rndrtim = timeu.asctime('%m/%d/%Y')
 
 
 #----------------------------------------------------------------------
@@ -78,6 +83,21 @@ def getprecision(distance):
         agtimeprecision = 0
         
     return timeprecision, agtimeprecision
+
+#----------------------------------------------------------------------
+def renderdate(dbdate): 
+#----------------------------------------------------------------------
+    '''
+    create date for display
+    
+    :param dbdate: date from database ('yyyy-mm-dd')
+    '''
+    try:
+        dtdate = dbtime.asc2dt(dbdate)
+        rval = rndrtim.dt2asc(dtdate)
+    except ValueError:
+        rval = dbdate
+    return rval
 
 #----------------------------------------------------------------------
 def rendertime(dbtime,precision): 

@@ -43,7 +43,7 @@ import xlwt
 from runningclub import *
 import version
 import racedb
-
+import render
 
 ########################################################################
 class BaseStandingsHandler():
@@ -393,7 +393,7 @@ class TxtStandingsHandler(BaseStandingsHandler):
         self.racelist = []
         for race in self.session.query(racedb.Race).join("series").filter(racedb.RaceSeries.seriesid==series.id).order_by(racedb.Race.racenum).all():
             self.racelist.append(race.racenum)
-            self.TXT[gen].write('\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,race.date))
+            self.TXT[gen].write('\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,render.renderdate(race.date)))
             numraces += 1
         self.TXT[gen].write('\n')
 
@@ -602,13 +602,13 @@ class XlStandingsHandler(BaseStandingsHandler):
             race = self.races[racendx]
             self.racelist.append(race.racenum)
             thisrow = self.rownum[gen]+racendx
-            self.ws[gen].write(thisrow,thiscol,'\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,race.date),self.style['racename'])
+            self.ws[gen].write(thisrow,thiscol,'\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,render.renderdate(race.date)),self.style['racename'])
         thiscol = 6
         for racendx in range(nracerows,numraces):
             race = self.races[racendx]
             self.racelist.append(race.racenum)
             thisrow = self.rownum[gen]+racendx-nracerows
-            self.ws[gen].write(thisrow,thiscol,'\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,race.date),self.style['racename'])
+            self.ws[gen].write(thisrow,thiscol,'\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,render.renderdate(race.date)),self.style['racename'])
 
         self.rownum[gen] += nracerows+1
         
