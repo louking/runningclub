@@ -54,7 +54,7 @@ class BaseRaceHandler():
     
     :param session: database session
     :param distance: race distance (miles)
-    :param **resultfilter: keyword filter for RaceResult table
+    :param \*\*resultfilter: keyword filter for RaceResult table
     '''
     #----------------------------------------------------------------------
     def __init__(self,session,distance,**resultfilter):
@@ -383,7 +383,7 @@ class TxtRaceHandler(BaseRaceHandler):
     
     :param session: database session
     :param distance: race distance (miles)
-    :param **resultfilter: keyword filter for RaceResult table
+    :param \*\*resultfilter: keyword filter for RaceResult table
     '''
     #----------------------------------------------------------------------
     def __init__(self,session,distance,**resultfilter):
@@ -578,7 +578,7 @@ class XlRaceHandler(BaseRaceHandler):
     
     :param session: database session
     :param distance: race distance (miles)
-    :param **resultfilter: keyword filter for RaceResult table
+    :param \*\*resultfilter: keyword filter for RaceResult table
     '''
     #----------------------------------------------------------------------
     def __init__(self,session,distance,**resultfilter):
@@ -890,7 +890,7 @@ class RaceRenderer():
     :param raceid: race.id
     :param orderby: name of field in RaceResult with which results should be ordered (e.g., 'time')
     :param hightolow: True if ordering is high value to low value
-    :param **resultfilter: filter parameters for racedb.RaceResult table
+    :param \*\*resultfilter: filter parameters for racedb.RaceResult table
     '''
     #----------------------------------------------------------------------
     def __init__(self,session,racename,raceid,orderby,hightolow,**resultfilter):

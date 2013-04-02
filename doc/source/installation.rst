@@ -26,55 +26,41 @@ Requirements
 User Installation
 ^^^^^^^^^^^^^^^^^^^^
 
-Prior to installation of mbmss, the following should be installed on the target machine, in the following order:
+Prior to installation, the following should be installed on the target machine, in the following order:
 
 * windows PC
 * python 2.7.x 32 bit 
     * add C:\Python26;C:\Python26\Scripts;C:\cygwin\bin to PATH environment variable
     * setuptools
-    * numpy
-    * matplotlib
     
-**python 2.6.6** -- downloads for python 2.6 can be found at `<http://www.python.org/download/releases/2.6.6/>`_ .   It is possible that mbmss would work under python 2.7, but that hasn't been tested.  It is unlikely that mbmss would work under python 3.x.
+**python 2.7.3** -- downloads for python 2.7 can be found at `<http://www.python.org/download/releases/2.7.3/>`_ .   
 
 * download the Windows x86 MSI Installer (or the x86-64 MSI Installer, if you have a 64 bit machine)
-* run the MSI installer and accept all the defaults.  Note if you put the Python26 directory in the default location, <PYTHONHOME> will be C:\\Python26
+* run the MSI installer and accept all the defaults.  Note if you put the Python27 directory in the default location, <PYTHONHOME> will be C:\\Python27
 
-**setuptools** -- Documentation on how to install setuptools, along with the package itself, can be found on the Python Package Index at `<http://pypi.python.org/pypi/setuptools>`_.  You should install the setuptools targeted for python 2.6.
+**setuptools** -- Documentation on how to install setuptools, along with the package itself, can be found on the Python Package Index at `<http://pypi.python.org/pypi/setuptools>`_.  You should install the setuptools targeted for python 2.7.
 
-* download the latest file similar to setuptools-<version>.win32-py2.6.exe (must be py2.6.exe)
+* download the latest file similar to setuptools-<version>.win32-py2.7.exe (must be py2.7.exe)
 * run the installer and accept all the defaults
 
-**numpy / matplotlib** -- numpy and matplotlib python packages are used by mbmss, and do not seem to get loaded automatically.  These can be found on sharepoint within the Hughes intranet at `<http://hughesweb.hughes.com/sites/eng/msat/globalstar/Shared%20Documents/Script%20Repository>`_ .
+**pypi packages** - can be found on the Python Package Index at `<http://pypi.python.org/pypi/setuptools>`_ .  Once setuptools has been installed, assuming internet access, these packages can be installed using easy_install, e.g., easy_install xlrd
+    * xlwt
+    * xlrd
 
-* download and unzip numpymatplot.zip
-* run the installer for numpy and accept all the defaults
-* run the installer for matplotlib and accept all the defaults
-
-**pypi packages** - can be found on the Python Package Index at `<http://pypi.python.org/pypi/setuptools>`_ .  Once setuptools has been installed, assuming internet access, these packages can be installed using easy_install, e.g., easy_install PyDAQmx, or easy_install ooxml
-
-**goccutils** -- goccutils can be found on sharepoint within the Hughes intranet at `<http://hughesweb.hughes.com/sites/eng/msat/globalstar/Shared%20Documents/Script%20Repository>`_.  Download the egg file named mbmss-<ver>-py2.6.egg to <your-directory>, where <ver> is replaced by the goccutils version (use the latest).
-
-**mbmss** -- mbmss can be found on sharepoint within the Hughes intranet at `<http://hughesweb.hughes.com/sites/eng/msat/globalstar/Shared%20Documents/Script%20Repository>`_.  Download the egg file named mbmss-<ver>-py2.6.egg to <your-directory>, where <ver> is replaced by the mbmss version (use the latest).
-
-Assuming the requirements above have been installed, goccutils and mbmss can be installed from any command window using the following (in this case <ver> is '1.1')::
+Other packages
+    * loutilities - see http://github.com/louking/loutilities
+    * sqlalchemy - see http://www.sqlalchemy.org/ tested against 0.8.0b2
+    
+Assuming the requirements above have been installed, runningclub can be installed from any command window using the following (in this case <ver> is '1.1')::
 
     > cd <your-directory>
-    > easy_install mbmss-1.1-py2.6.egg
+    > easy_install runningclub-1.1-py2.7.egg
 
 **script execution**
 
 * After installation, any of the scripts should be runnable from the command line, e.g., ::
 
-    $ runmbmss --version
-
-For convenience, the following packages / programs can be installed as well:
-
-* notepad++
-* teamviewer (975548451 - password mbmss123)
-* cygwin (all)
-* putty
-* iPython
+    $ updatemembers --version
 
 Development information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

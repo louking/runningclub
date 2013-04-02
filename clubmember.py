@@ -246,7 +246,7 @@ class DbClubMember(ClubMember):
     
     :params dbfilename: database file from which club members are to be retrieved
     :params cutoff: cutoff for getmember.  float in (0,1].  higher means strings have to match more closely to be considered "close".  Default 0.6
-    :params **kwfilter: keyword parameters for racedb.Runner database filter
+    :params \*\*kwfilter: keyword parameters for racedb.Runner database filter
     '''
     
     #----------------------------------------------------------------------

@@ -4,23 +4,17 @@ Module Index
     :maxdepth: 2
 
     installation
-    troubleshooting
+    releasenotes
     
-    adjustncgains
-    adjustscgains
-    determinegainpeaks
-    gpstarplus
-    matrixswitch
-    mbmssfile
-    mbmssgui
-    mbmsslogger
-    mbmsssleload
-    mbmsssplittrig
-    mbmsstrigger
-    mbmssutils
-    runmbmss
-    sc2mbmss
-    sle
-    sleutils
-    ssg
-    ssgutils
+    agegrade
+    clubmember
+    listraces
+    racedb
+    racefile
+    raceresults
+    render
+    renderrace
+    renderstandings
+    updatemembers
+    updateraces
+    updateresults
