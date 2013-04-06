@@ -38,7 +38,6 @@ import argparse
 # other
 
 # home grown
-from runningclub import *
 import version
 import racedb
 DBDATEFMT = racedb.DBDATEFMT

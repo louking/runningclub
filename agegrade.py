@@ -40,7 +40,7 @@ import shutil
 
 # home grown
 import version
-from runningclub import *
+from config import *
 from loutilities import csvwt
 
 # exceptions for this module.  See __init__.py for package exceptions

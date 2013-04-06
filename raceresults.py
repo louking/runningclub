@@ -35,7 +35,7 @@ import argparse
 # github
 
 # home grown
-from runningclub import *
+from config import parameterError
 import version
 from loutilities import textreader
 

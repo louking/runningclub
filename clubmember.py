@@ -38,7 +38,6 @@ import csv
 # github
 
 # home grown
-from runningclub import *
 import version
 import racedb
 from loutilities import timeu, csvwt

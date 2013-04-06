@@ -41,6 +41,17 @@ setup(
     packages = find_packages(),
 #    include_package_data = True,
     scripts = [
+        'runningclub/agegrade.py',
+        'runningclub/listraces.py',
+        'runningclub/raceresults.py',
+        'runningclub/rcadminapprove.py',
+        'runningclub/rcadminconfig.py',
+        'runningclub/rcuserconfig.py',
+        'runningclub/renderrace.py',
+        'runningclub/renderstandings.py',
+        'runningclub/updatemembers.py',
+        'runningclub/updateraces.py',
+        'runningclub/updateresults.py',
     ],
 
     # Project uses reStructuredText, so ensure that the docutils get
@@ -52,11 +63,28 @@ setup(
 
     # If any package contains any of these file types, include them:
     data_files = ([
+            globit('runningclub', ['*.conf','*.pyc','*.pyd','*.dll','*.h','*.xlsx']),
+            globit('runningclub/doc/source', ['*.txt', '*.rst', '*.html', '*.css', '*.js', '*.png', '*.py', ]),
+            globit('runningclub/doc/build/html', ['*.txt', '*.rst', '*.html', '*.css', '*.js', '*.png', ]),
+            globit('runningclub/doc/build/html/_sources', ['*.txt', '*.rst', '*.html', '*.css', '*.js', '*.png', ]),
+            globit('runningclub/doc/build/html/_static', ['*.txt', '*.rst', '*.html', '*.css', '*.js', '*.png', ]),
+            globit('runningclub/doc/build/html/_images', ['*.png', ]),
         ]),
 
 
     entry_points = {
         'console_scripts': [
+            'agegrade = runningclub.agegrade:main',
+            'listraces = runningclub.listraces:main',
+            'raceresults = runningclub.raceresults:main',
+            'rcadminapprove = runningclub.rcadminapprove:main',
+            'rcadminconfig = runningclub.rcadminconfig:main',
+            'rcuserconfig = runningclub.rcuserconfig:main',
+            'renderrace = runningclub.renderrace:main',
+            'renderstandings = runningclub.renderstandings:main',
+            'updatemembers = runningclub.updatemembers:main',
+            'updateraces = runningclub.updateraces:main',
+            'updateresults = runningclub.updateresults:main',
         ],
     },
 

@@ -40,7 +40,7 @@ import xlwt
 # other
 
 # home grown
-from runningclub import *
+from config import parameterError,dbConsistencyError
 import version
 import racedb
 import render

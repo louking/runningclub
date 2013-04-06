@@ -39,7 +39,6 @@ import xlrd
 # other
 
 # home grown
-from runningclub import *
 from loutilities import timeu
 
 tYmd = timeu.asctime('%Y-%m-%d')

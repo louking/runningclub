@@ -47,7 +47,6 @@ import argparse
 # other
 
 # home grown
-from runningclub import *
 import version
 import clubmember
 import racedb

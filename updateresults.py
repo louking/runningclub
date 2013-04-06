@@ -41,7 +41,7 @@ import xlrd
 # other
 
 # home grown
-from runningclub import *
+from config import dbConsistencyError
 import version
 import racedb
 import clubmember

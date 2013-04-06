@@ -54,7 +54,7 @@ from sqlalchemy.orm import sessionmaker, object_mapper, relationship, backref
 Session = sessionmaker()    # create sqalchemy Session class
 
 # home grown
-from runningclub import *
+from config import *
 import version
 from loutilities import timeu
 

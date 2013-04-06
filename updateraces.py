@@ -60,7 +60,7 @@ import argparse
 # other
 
 # home grown
-from runningclub import *
+from config import dbConsistencyError
 import version
 import racefile
 import racedb

@@ -40,7 +40,6 @@ import xlwt
 # other
 
 # home grown
-from runningclub import *
 import version
 import racedb
 import render
