@@ -1,10 +1,11 @@
 #!/usr/bin/python
 ###########################################################################################
-# updatemembers - update club members within database
+# modifymembers - update club members within database
 #
-#	Date		Author		Reason
-#	----		------		------
+#       Date            Author          Reason
+#       ----            ------          ------
 #       02/01/13        Lou King        Create
+#       04/04/13        Lou King        rename from updatemembers due to glitch in setuptools/windows8
 #
 #   Copyright 2013 Lou King
 #
@@ -22,7 +23,7 @@
 #
 ###########################################################################################
 '''
-updatemembers - update club members within database
+modifymembers - update club members within database
 ======================================================
 
 Membership spreadsheet must have at least the following columns:
@@ -59,7 +60,7 @@ def main():
     '''
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('memberfile',help='file with member information')
-    parser.add_argument('-r','--racedb',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
+    parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     parser.add_argument('--debug',help='if set, create updatemembers.txt for debugging',action='store_true')
     args = parser.parse_args()
     

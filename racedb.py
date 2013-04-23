@@ -42,6 +42,7 @@ import argparse
 import time
 
 # pypi
+from Crypto.PublicKey import RSA
 
 # github
 
@@ -54,25 +55,93 @@ from sqlalchemy.orm import sessionmaker, object_mapper, relationship, backref
 Session = sessionmaker()    # create sqalchemy Session class
 
 # home grown
-from config import *
+from config import CF,SECCF,OPTUSERPWAPI,OPTCLUBABBREV,OPTDBTYPE,OPTDBSERVER,OPTDBNAME,OPTDBGLOBUSER,OPTUNAME,KF,SECKEY,OPTPRIVKEY
+import userpw
 import version
 from loutilities import timeu
 
 DBDATEFMT = '%Y-%m-%d'
 t = timeu.asctime(DBDATEFMT)
 
+# will be handle for persistent storage in webapp
+PERSIST = None
+
 #----------------------------------------------------------------------
-def setracedb(dbfilename):
+def setracedb(dbfilename=None):
 #----------------------------------------------------------------------
     '''
     initialize race database
     
-    :params dbfilename: filename for race database
+    :params dbfilename: filename for race database, if None get from configuration
     '''
-    # set up connection to db -- assume sqlite3 for now
+    # set up connection to db
+    if dbfilename is None:
+        dbfilename = getdbfilename()
+
     engine = sqlalchemy.create_engine('{0}'.format(dbfilename))
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)
+
+#----------------------------------------------------------------------
+def getdbfilename():
+#----------------------------------------------------------------------
+    '''
+    get database file access string from configuration and webapp
+    '''
+    dbtype = getoption(OPTDBTYPE)
+    dbname = getoption(OPTDBNAME)
+    if dbtype=='sqlite':
+        serverunamepw = ''
+    #elif dbtype[0:5]=='mysql':  # allow drivers for mysql dialect
+    else:                        # assume all others will just work.  only mysql has been tested though
+        dbserver = getoption(OPTDBSERVER)
+        dbuser = getoption(OPTDBGLOBUSER)
+        # no global user, then must be by local user
+        if dbuser is None:
+            dbuser = getoption(OPTUNAME)
+        
+        # get encrypted password, private key, and decrypt the password
+        apiurl = getoption(OPTUSERPWAPI)
+        global PERSIST
+        PERSIST = userpw.UserPw(apiurl)
+        encrypteddbpw = PERSIST.getencryptedpw(getoption(OPTCLUBABBREV),getoption(OPTUNAME))
+        privkey = RSA.importKey(getprivkey())
+        password = privkey.decrypt(encrypteddbpw)
+        serverunamepw = '{uname}:{pw}@{server}'.format(uname=dbuser,pw=password,server=dbserver)
+
+    # of the form dialect+driver://user:password@host/dbname
+    return '{type}://{serverunamepw}/{name}'.format(type=dbtype,serverunamepw=serverunamepw,name=dbname)
+        
+#----------------------------------------------------------------------
+def getoption(option): 
+#----------------------------------------------------------------------
+    '''
+    get an option from the configuration file
+    
+    :param option: name of option
+    :rtype: value of option, or None if not found
+    '''
+    try:
+        return CF.get(SECCF,option)
+    except extconfigparser.unknownSection:
+        return None
+    except extconfigparser.unknownOption:
+        return None
+
+#----------------------------------------------------------------------
+def getprivkey(): 
+#----------------------------------------------------------------------
+    '''
+    get private key from the key file
+    
+    :rtype: value of private key, or None if not found
+    '''
+    try:
+        return KF.get(SECKEY,OPTPRIVKEY)
+    except extconfigparser.unknownSection:
+        return None
+    except extconfigparser.unknownOption:
+        return None
 
 #----------------------------------------------------------------------
 def insert_or_update(session, model, newinstance, skipcolumns=[], **kwargs):

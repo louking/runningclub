@@ -79,8 +79,8 @@ def main():
     update race information
     '''
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
-    parser.add_argument('-r','--racedb',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
     parser.add_argument('-y','--year',help='year of races to list',default=None, type=int)
+    parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     args = parser.parse_args()
     
     racedb.setracedb(args.racedb)

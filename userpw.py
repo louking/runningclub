@@ -85,16 +85,16 @@ class UserPw():
             params.pop('username')
             
         url = self.apiurl+'{method}?{params}'.format(method=method,params=urllib.urlencode(params))
-        resp,jsoncontent = HTTP.request(url,method='POST')
+        resp,jsoncontent = HTTP.request(url,method='POST',headers={'content-length':'0'})
     
         if resp.status != 200:
-            raise accessError, 'URL response status = {0}'.format(resp.status)
+            raise accessError, 'URL response status = {}, req=POST {}'.format(resp.status,url)
         
         # unmarshall the response content
         content = json.loads(jsoncontent)
     
         if content['status'] != 'OK':
-            raise accessError, 'URL content status = {0}'.format(content['status'])
+            raise accessError, 'URL content status = {}, req=POST {}'.format(content['status'],url)
         
     #----------------------------------------------------------------------
     def _getattr(self,runningclub,username,method,attr):
@@ -111,16 +111,16 @@ class UserPw():
                   'username':username}
             
         url = self.apiurl+'{method}?{params}'.format(method=method,params=urllib.urlencode(params))
-        resp,jsoncontent = HTTP.request(url,method='GET')
+        resp,jsoncontent = HTTP.request(url,method='GET',headers={'content-length':'0'})
     
         if resp.status != 200:
-            raise accessError, 'URL response status = {0}'.format(resp.status)
+            raise accessError, 'URL response status = {}, req=GET {}'.format(resp.status,url)
         
         # unmarshall the response content
         content = json.loads(jsoncontent)
     
         if content['status'] != 'OK':
-            raise accessError, 'URL content status = {0}'.format(content['status'])
+            raise accessError, 'URL content status = {}, req=GET {}'.format(content['status',url])
         
         return content[attr]
         

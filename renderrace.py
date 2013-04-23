@@ -954,9 +954,9 @@ def main():
     '''
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
-    parser.add_argument('-r','--racedb',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
     parser.add_argument('-o','--orderby',help='name of RaceResult field to order results by (default %(default)s)',default='time')
     parser.add_argument('-H','--hightolow',help='use if results are to be ordered high value to low value',action='store_true')
+    parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     args = parser.parse_args()
     
     raceid = args.raceid

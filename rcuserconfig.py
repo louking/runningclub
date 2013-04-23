@@ -28,7 +28,20 @@ rcuserconfig - user configuration for running club
 Configure running club information for user
 
 Usage::
-    TBA
+    rcuserconfig [-h] [-v] [-k] username email configfile
+    
+    positional arguments:
+      username        user name - get from club administrator
+      email           email address
+      configfile      name of configuration file - get file from club
+                      administrator
+    
+    optional arguments:
+      -h, --help      show this help message and exit
+      -v, --version   show program's version number and exit
+      -k, --resetkey  use option only to reset encryption keys. It is unusual to
+                      need this.
+
 '''
 
 # standard

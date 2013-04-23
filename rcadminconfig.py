@@ -29,33 +29,39 @@ Configure running club information for administrator
 
 Usage::
     rcadminconfig [-h] [-v] [-a CLUBABBREV] [-f CLUBFULL]
-                  [-w USERPWPAPI] [-t DBTYPE] [-s DBSERVER] [-n DBNAME]
-                  [-g DBGLOBALUSER] [-u DBUSERPASSWORD]
-
+                  [-e EMAIL] [-w USERPWPAPI] [-t DBTYPE]
+                  [-s DBSERVER] [-n DBNAME] [-g DBGLOBALUSER]
+                  [-u DBUSERPASSWORD]
+    
     optional arguments:
       -h, --help            show this help message and exit
       -v, --version         show program's version number and exit
       -a CLUBABBREV, --clubabbrev CLUBABBREV
-                            abbreviation for club name. default=None
+                            abbreviation for club name. default=FSRC
       -f CLUBFULL, --clubfull CLUBFULL
-                            full club name. default=None
+                            full club name. default=Frederick Steeplechaser
+                            Running Club
+      -e EMAIL, --email EMAIL
+                            admin email address. default=lking@pobox.com
       -w USERPWPAPI, --userpwpapi USERPWPAPI
                             base url of api to user/password repository.
-                            default=None
+                            default=http://localhost:9080/api/userpw/
       -t DBTYPE, --dbtype DBTYPE
-                            type of database, mysql|sqlite. default=None
+                            type of database, mysql|sqlite. default=mysql
       -s DBSERVER, --dbserver DBSERVER
                             server on which club database resides.
-                            default=None
+                            default=127.0.0.1
       -n DBNAME, --dbname DBNAME
-                            database name. default=None
+                            database name. default=racedb
       -g DBGLOBALUSER, --dbglobaluser DBGLOBALUSER
                             global access username, or None if access requires
-                            individual username. default=None
+                            individual username. default=lking
       -u DBUSERPASSWORD, --dbuserpassword DBUSERPASSWORD
                             username[:password] for database. more than one can be
-                            specified, separated by commas (no spaces)
-
+                            specified, separated by commas (no spaces). Use double
+                            quotes as some characters in password might get eaten
+                            otherwise
+                        
 '''
 
 # standard
@@ -173,7 +179,7 @@ def main():
         sopt,helptxt = OPTTBL[opt]
         lopt = '--{opt}'.format(opt=opt)
         parser.add_argument(sopt,lopt,help='{help}.  default=%(default)s'.format(help=helptxt),default=cfg[opt])
-    parser.add_argument('-u','--{opt}'.format(opt=OPTDBPW),help='username[:password] for database.  more than one can be specified, separated by commas (no spaces)')
+    parser.add_argument('-u','--{opt}'.format(opt=OPTDBPW),help='username[:password] for database.  more than one can be specified, separated by commas (no spaces).  Use double quotes as some characters in password might get eaten otherwise')
 
     args = parser.parse_args()
     updateconfig(**vars(args))

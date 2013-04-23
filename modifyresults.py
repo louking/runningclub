@@ -1,10 +1,11 @@
 #!/usr/bin/python
 ###########################################################################################
-#   updateresults - add results file to race database
+#   modifyresults - add results file to race database
 #
-#   Date        Author      Reason
-#   ----        ------      ------
-#   01/21/13    Lou King    Create
+#       Date            Author          Reason
+#       ----            ------          ------
+#       01/21/13        Lou King        Create
+#       04/04/13        Lou King        rename from updateresults due to glitch in setuptools/windows8
 #
 #   Copyright 2013 Lou King
 #
@@ -22,7 +23,7 @@
 #
 ###########################################################################################
 '''
-updateresults - add results file to race database
+modifyresults - add results file to race database
 ==========================================================
 '''
 
@@ -338,15 +339,15 @@ def main():
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
     parser.add_argument('-f','--resultsfile',help='file with results information',default=None)
-    parser.add_argument('-r','--racedbfile',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
     parser.add_argument('-d','--delete',help='delete results for this race',action='store_true')
     parser.add_argument('-c','--cutoff',help='cutoff for close match lookup (default %(default)0.2f)',type=float,default=0.7)
+    parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     parser.add_argument('--debug',help='if set, create updateraces.txt for debugging',action='store_true')
     args = parser.parse_args()
     
     raceid = args.raceid
     resultsfile = args.resultsfile
-    racedbfile = args.racedbfile
+    #racedbfile = args.racedbfile
     
     if args.debug:
         global DEBUG
@@ -354,6 +355,10 @@ def main():
         DEBUG.write('name in race,age in race,found,member name\n')
     
     # get active and inactive members
+    if args.racedb:
+        racedbfile = args.racedb
+    else:
+        racedbfile = racedb.getdbfilename()
     active = clubmember.DbClubMember(racedbfile,cutoff=args.cutoff,active=True)
     inactive = clubmember.DbClubMember(racedbfile,cutoff=args.cutoff,active=False)
     

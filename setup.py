@@ -43,15 +43,14 @@ setup(
     scripts = [
         'runningclub/agegrade.py',
         'runningclub/listraces.py',
-        'runningclub/raceresults.py',
         'runningclub/rcadminapprove.py',
         'runningclub/rcadminconfig.py',
         'runningclub/rcuserconfig.py',
         'runningclub/renderrace.py',
         'runningclub/renderstandings.py',
-        'runningclub/updatemembers.py',
-        'runningclub/updateraces.py',
-        'runningclub/updateresults.py',
+        'runningclub/modifymembers.py',
+        'runningclub/modifyraces.py',
+        'runningclub/modifyresults.py',
     ],
 
     # Project uses reStructuredText, so ensure that the docutils get
@@ -76,15 +75,14 @@ setup(
         'console_scripts': [
             'agegrade = runningclub.agegrade:main',
             'listraces = runningclub.listraces:main',
-            'raceresults = runningclub.raceresults:main',
             'rcadminapprove = runningclub.rcadminapprove:main',
             'rcadminconfig = runningclub.rcadminconfig:main',
             'rcuserconfig = runningclub.rcuserconfig:main',
             'renderrace = runningclub.renderrace:main',
             'renderstandings = runningclub.renderstandings:main',
-            'updatemembers = runningclub.updatemembers:main',
-            'updateraces = runningclub.updateraces:main',
-            'updateresults = runningclub.updateresults:main',
+            'modifymembers = runningclub.modifymembers:main',
+            'modifyraces = runningclub.modifyraces:main',
+            'modifyresults = runningclub.modifyresults:main',
         ],
     },
 

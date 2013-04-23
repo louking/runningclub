@@ -5,6 +5,7 @@
 #	Date		Author		Reason
 #	----		------		------
 #       02/14/13        Lou King        Create
+#       04/23/13        Lou King        issue #18, render ties correctly
 #
 #   Copyright 2013 Lou King
 #
@@ -959,19 +960,31 @@ class StandingsRenderer():
                         # total numbers only, and convert to int if possible
                         racetotals = [r for r in racetotals if type(r) in [int,float]]
                         totpoints = sum(racetotals[:min(self.maxraces,len(racetotals))])
+                        # render as integer if result same as integer
                         totpoints = int(totpoints) if totpoints == int(totpoints) else totpoints
                         bypoints.append((totpoints,name))
                     
                     # sort runners within division by total points and render
                     bypoints.sort(reverse=True)
                     thisplace = 1
+                    lastpoints = -999
                     for runner in bypoints:
                         totpoints,name = runner
                         fh.clearline(gen)
-                        fh.setplace(gen,thisplace)
+                        
+                        # render place if it's different than last runner's place, else there was a tie
+                        renderplace = thisplace
+                        if totpoints == lastpoints:
+                            renderplace = ''
+                        fh.setplace(gen,renderplace)
                         thisplace += 1
+                        
+                        # render name and total points, remember last total points
                         fh.setname(gen,name)
                         fh.settotal(gen,totpoints)
+                        lastpoints = totpoints
+                        
+                        # render race results
                         racenum = 1
                         for pts in byrunner[name]['bydivision']:
                             fh.setrace(gen,racenum,pts)
@@ -1003,13 +1016,24 @@ class StandingsRenderer():
             # sort runners by total points and render
             bypoints.sort(reverse=True)
             thisplace = 1
+            lastpoints = -999
             for runner in bypoints:
                 totpoints,name = runner
                 fh.clearline(gen)
-                fh.setplace(gen,thisplace)
+                        
+                # render place if it's different than last runner's place, else there was a tie
+                renderplace = thisplace
+                if totpoints == lastpoints:
+                    renderplace = ''
+                fh.setplace(gen,renderplace)
                 thisplace += 1
+                
+                # render name and total points, remember last total points
                 fh.setname(gen,name)
                 fh.settotal(gen,totpoints)
+                lastpoints = totpoints
+                
+                # render race results
                 racenum = 1
                 for pts in byrunner[name]['bygender']:
                     fh.setrace(gen,racenum,pts)
@@ -1027,8 +1051,8 @@ def main():
     render result information
     '''
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
-    parser.add_argument('-r','--racedb',help='filename of race database (default %(default)s)',default='sqlite:///racedb.db')
     parser.add_argument('-s','--series',help='series to render',default=None)
+    parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     args = parser.parse_args()
     
     racedb.setracedb(args.racedb)

@@ -56,6 +56,22 @@ Assuming the requirements above have been installed, runningclub can be installe
     > cd <your-directory>
     > easy_install runningclub-1.1-py2.7.egg
 
+**google database access**
+
+* some running databases are stored in google cloud SQL.  In order to access a google database, you must visit https://developers.google.com/cloud-sql/docs/commandline and follow the instructions
+
+    * install google application engine sdk; copy google directory from sdk to python site-packages directory; add google.pth containing './google\n' to site-packages directory
+    * copy google_sql.py from https://code.google.com/p/googleappengine/source/browse/trunk/python/google_sql.py to site-packages directory
+    * run google sql cli::
+    
+        C:\unzipdirectory>google_sql.cmd fsrcrunning:fsrcrunningdb [get the instance name from your runningclub administrator]
+        Please authorize Google SQL Service for your Google Account at:
+        http://goo.gl/**** 
+        Enter Authorization Code: ******************************* [get from link which shows up above]
+        sql> exit
+        Bye
+        C:\unzipdirectory>
+
 **script execution**
 
 * After installation, any of the scripts should be runnable from the command line, e.g., ::
