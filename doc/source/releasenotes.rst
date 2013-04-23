@@ -44,6 +44,7 @@ release to github
 --------------------
 
 * update version.py
+* <package>\setup.py install
 * commit change "version x.y.z"
 * if branch
     * merge branch to master
@@ -55,4 +56,4 @@ release to github
 py2exe (optional)
 -------------------
 
-    * <package>\setup.py install py2exe
+    * <package>\setup.py py2exe
