@@ -5,6 +5,7 @@
 #	Date		Author		Reason
 #	----		------		------
 #       01/23/13        Lou King        Create
+#       04/26/13        Lou King        temp fix for issue #20 - allow mysql+gaerdbms
 #
 #   Copyright 2013 Lou King
 #
@@ -90,8 +91,15 @@ def getdbfilename():
     '''
     dbtype = getoption(OPTDBTYPE)
     dbname = getoption(OPTDBNAME)
+    
+    # sqlite3 - personal database
     if dbtype=='sqlite':
         serverunamepw = ''
+        
+    # google cloud sql - assume dbname includes instance for now
+    elif dbtype=='mysql+gaerdbms':
+        serverunamepw = ''
+        
     #elif dbtype[0:5]=='mysql':  # allow drivers for mysql dialect
     else:                        # assume all others will just work.  only mysql has been tested though
         dbserver = getoption(OPTDBSERVER)

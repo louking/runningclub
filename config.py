@@ -72,6 +72,8 @@ OPTDBSERVER   = 'dbserver'
 OPTDBNAME     = 'dbname'
 OPTDBGLOBUSER = 'dbglobaluser'
 OPTUNAME      = 'username'          # not in OPTTBL - for FILEUSERCONFIG only
+OPTCLEARDB    = 'cleardb'           # not in OPTTBL - clears DB parameters
+DBCLEAROPTS = [OPTDBTYPE,OPTDBSERVER,OPTDBNAME] # options to null out if OPTCLEARDB set
 
 # options constants for FILEDBPW
 OPTDBPW       = 'dbuserpassword'

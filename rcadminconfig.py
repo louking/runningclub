@@ -78,7 +78,7 @@ import argparse
 import version
 from loutilities import extconfigparser
 import userpw
-from config import CONFIGDIR,PF,OPTTBL,SECCF,OPTDBPW,OPTDBSERVER,OPTUSERPWAPI,OPTCLUBABBREV,OPTEMAIL,parameterError
+from config import CONFIGDIR,PF,OPTTBL,SECCF,OPTDBPW,OPTDBSERVER,OPTUSERPWAPI,OPTCLUBABBREV,OPTEMAIL,OPTCLEARDB,DBCLEAROPTS,parameterError
 
 ADMINCONFIGFILE = 'rcadminconfig.cfg'
 ACF = extconfigparser.ConfigFile(CONFIGDIR,ADMINCONFIGFILE)
@@ -165,6 +165,21 @@ def getoption(option):
         return None
 
 #----------------------------------------------------------------------
+def deloption(option): 
+#----------------------------------------------------------------------
+    '''
+    delete an option from the configuration file
+    
+    :param option: name of option
+    '''
+    try:
+        ACF.delopt(SECCF,option)
+    except extconfigparser.unknownSection:
+        return 
+    except extconfigparser.unknownOption:
+        return 
+
+#----------------------------------------------------------------------
 def main(): 
 #----------------------------------------------------------------------
     '''
@@ -180,8 +195,15 @@ def main():
         lopt = '--{opt}'.format(opt=opt)
         parser.add_argument(sopt,lopt,help='{help}.  default=%(default)s'.format(help=helptxt),default=cfg[opt])
     parser.add_argument('-u','--{opt}'.format(opt=OPTDBPW),help='username[:password] for database.  more than one can be specified, separated by commas (no spaces).  Use double quotes as some characters in password might get eaten otherwise')
+    parser.add_argument('-C','--{opt}'.format(opt=OPTCLEARDB),help='clear db options {opts} and return'.format(opts=[o.upper() for o in DBCLEAROPTS]),action='store_true')
 
     args = parser.parse_args()
+    
+    if vars(args)[OPTCLEARDB]:
+        for opt in DBCLEAROPTS:
+            deloption(opt)
+        print 'database options {opts} removed.  no other changes made'.format(opts=[o.upper() for o in DBCLEAROPTS])
+        
     updateconfig(**vars(args))
 
 ###########################################################################################

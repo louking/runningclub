@@ -41,15 +41,16 @@ from loutilities import textreader
 
 # fieldxform is a dict whose keys are the 'real' information we're interested in
 # the value for a particular key contains a list with possible header entries which might be used to represent that key
+# field used is prioritized by order in list
 # TODO: get these from a configuration file
 fieldxform = {
-    'place':['place','pl','gunplace'],
+    'place':['place','pl','gunplace','overall place'],
     'lastname':[['last','name'],'last name','lastname','last'],
     'firstname':[['first','name'],'first name','firstname','first'],
     'name':['name','runner'],
     'gender':['gender','sex','male/female','s'],
     'age':['age','ag'],
-    'time':['actual time','time','nettime','guntime'],
+    'time':['actual time','nettime','chiptime','time','guntime'],
 }
 
 # exceptions for this module.  See __init__.py for package exceptions
