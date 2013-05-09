@@ -1,2 +1,0 @@
-.. automodule:: updateresults
-    :members:

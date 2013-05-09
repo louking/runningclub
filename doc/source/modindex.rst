@@ -8,13 +8,12 @@ Module Index
     
     agegrade
     clubmember
-    listraces
+    importmembers
+    importraces
+    importresults    listraces
     racedb
     racefile
     raceresults
     render
     renderrace
     renderstandings
-    updatemembers
-    updateraces
-    updateresults

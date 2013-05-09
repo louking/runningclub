@@ -19,7 +19,7 @@ runningclub 0.1
 
 * list features
 
-:doc:`updatemembers` (new)
+:doc:`importmembers` (new)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Features
@@ -31,7 +31,7 @@ Features
 Planned Enhancements
 ****************************
 
-:doc:`updatemembers`
+:doc:`importmembers`
 -------------------------
 
 * etc
