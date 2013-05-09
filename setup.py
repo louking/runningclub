@@ -42,15 +42,15 @@ setup(
 #    include_package_data = True,
     scripts = [
         'runningclub/agegrade.py',
+        'runningclub/importmembers.py',
+        'runningclub/importraces.py',
+        'runningclub/importresults.py',
         'runningclub/listraces.py',
         'runningclub/rcadminapprove.py',
         'runningclub/rcadminconfig.py',
         'runningclub/rcuserconfig.py',
         'runningclub/renderrace.py',
         'runningclub/renderstandings.py',
-        'runningclub/modifymembers.py',
-        'runningclub/modifyraces.py',
-        'runningclub/modifyresults.py',
     ],
 
     # Project uses reStructuredText, so ensure that the docutils get
@@ -74,15 +74,15 @@ setup(
     entry_points = {
         'console_scripts': [
             'agegrade = runningclub.agegrade:main',
+            'importmembers = runningclub.importmembers:main',
+            'importraces = runningclub.importraces:main',
+            'importresults = runningclub.importresults:main',
             'listraces = runningclub.listraces:main',
             'rcadminapprove = runningclub.rcadminapprove:main',
             'rcadminconfig = runningclub.rcadminconfig:main',
             'rcuserconfig = runningclub.rcuserconfig:main',
             'renderrace = runningclub.renderrace:main',
             'renderstandings = runningclub.renderstandings:main',
-            'modifymembers = runningclub.modifymembers:main',
-            'modifyraces = runningclub.modifyraces:main',
-            'modifyresults = runningclub.modifyresults:main',
         ],
     },
 
