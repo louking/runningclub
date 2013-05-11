@@ -57,7 +57,7 @@ DEBUG = None
 ag = agegrade.AgeGrade()
 
 #----------------------------------------------------------------------
-def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSECSV): 
+def tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,MISSEDCSV,CLOSECSV): 
 #----------------------------------------------------------------------
     '''
     collect the data, as directed by series attributes
@@ -65,11 +65,12 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
     :param session: database session
     :param race: racedb.Race object
     :param resultsfile: file containing results
+    :param excluded: list of racers which are to be excluded from results, regardless of member match
     :param series: racedb.Series object - describes how to calculate results
     :param active: active members as produced by clubmember.ClubMember()
     :param inactive: inactive members as produced by clubmember.ClubMember()
-    :param INACT: filehandle to write inactive member log entries, if desired (else None)
-    :param MISSED: filehandle to write log of members which did not match age based on dob in database, if desired (else None)
+    :param INACTCSV: filehandle to write inactive member log entries, if desired (else None)
+    :param MISSEDCSV: filehandle to write log of members which did not match age based on dob in database, if desired (else None)
     :param CLOSECSV: filehandle to write log of members which matched, but not exactly, if desired (else None)
     :rtype: number of entries processed
     '''
@@ -95,7 +96,7 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
         #    for thisdiv in divisions:
         #        division[gender][thisdiv] = []
 
-    # loop through result entries, collecting overall, bygender and division results
+    # collect results from resultsfile
     rr = raceresults.RaceResults(resultsfile,race.distance)
     numentries = 0
     results = []
@@ -111,29 +112,37 @@ def tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSEC
     for rndx in range(len(results)):
         result = results[rndx]
         
+        # skip result which has been asked to be excluded
+        if result['name'] in excluded: continue
+        
         # some races are for members only
         # for these, don't tabulate unless member found
         foundmember = active.findmember(result['name'],result['age'],race.date)
         foundinactive = inactive.findmember(result['name'],result['age'],race.date)
         
         # log member names found, but which did not match birth date
-        if MISSED and not foundmember:
+        if MISSEDCSV and not foundmember:
             missed = active.getmissedmatches()
             for thismiss in missed:
-                MISSED.write('age mismatch: {0}\n'.format(thismiss))
+                name = thismiss['dbname']
+                ascdob = thismiss['dob']
+                ratio = thismiss['ratio']
+                MISSEDCSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
             
         # log inactive members (members who had previously paid, but are not paid up) who ran this race
         if series.membersonly and not foundmember:
-            if foundinactive and INACT:
+            if foundinactive and INACTCSV:
                 name,ascdob = foundinactive
-                INACT.write('{0} {1}\n'.format(name,ascdob))
+                ratio = clubmember.getratio(result['name'],name)
+                INACTCSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
             continue
         
         # for members and inactivemembers, get name, id and genderfrom database (will replace that which was used in results file)
         if foundmember:
             name,ascdob = foundmember
             if CLOSECSV and name.strip().lower() != result['name'].strip().lower():
-                CLOSECSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob})
+                ratio = clubmember.getratio(result['name'],name)
+                CLOSECSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
         elif foundinactive:
             name,ascdob = foundinactive
         
@@ -339,6 +348,7 @@ def main():
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
     parser.add_argument('-f','--resultsfile',help='file with results information',default=None)
+    parser.add_argument('-e','--excludefile',help='file with list of racers to exclude, same format as "close-<resultsfile>.csv"',default=None)
     parser.add_argument('-d','--delete',help='delete results for this race',action='store_true')
     parser.add_argument('-c','--cutoff',help='cutoff for close match lookup (default %(default)0.2f)',type=float,default=0.7)
     parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
@@ -347,7 +357,7 @@ def main():
     
     raceid = args.raceid
     resultsfile = args.resultsfile
-    #racedbfile = args.racedbfile
+    excludefile = args.excludefile
     
     if args.debug:
         global DEBUG
@@ -397,10 +407,17 @@ def main():
     if numdeleted:
         print 'deleted {0} entries previously recorded'.format(numdeleted)
         
-    
     # only actually update results if --delete option not selected
     if not args.delete:
         
+        # get list of excluded racers from excludefile
+        excluded = []
+        if excludefile is not None:
+            with open(excludefile,'rb') as excl:
+                exclc = csv.DictReader(excl)
+                for row in exclc:
+                    excluded.append(row['results name'])
+                
         # TODO: there's probably a cleaner way to do this filter
         raceseries = session.query(racedb.RaceSeries).filter_by(raceid=raceid,active=True).all()
         seriesids = [s.seriesid for s in raceseries]
@@ -411,29 +428,31 @@ def main():
         # set up logging files
         logdir = os.path.dirname(resultsfile)
         resultfilebase = os.path.basename(resultsfile)
-        inactlogname = 'inactive-{0}.txt'.format(os.path.splitext(resultfilebase)[0])
-        INACT = open(os.path.join(logdir,inactlogname),'w')
-        missedlogname = 'missed-{0}.txt'.format(os.path.splitext(resultfilebase)[0])
-        MISSED = open(os.path.join(logdir,missedlogname),'w')
-        closelogname = 'close-{0}.csv'.format(os.path.splitext(resultfilebase)[0])
+        inactlogname = '{0}-inactive.csv'.format(os.path.splitext(resultfilebase)[0])
+        INACT = open(os.path.join(logdir,inactlogname),'wb')
+        INACTCSV = csv.DictWriter(INACT,['results name','results age','database name','database dob','ratio'])
+        missedlogname = '{0}-missed.csv'.format(os.path.splitext(resultfilebase)[0])
+        MISSED = open(os.path.join(logdir,missedlogname),'wb')
+        MISSEDCSV = csv.DictWriter(MISSED,['results name','results age','database name','database dob','ratio'])
+        closelogname = '{0}-close.csv'.format(os.path.splitext(resultfilebase)[0])
         CLOSE = open(os.path.join(logdir,closelogname),'wb')
-        CLOSECSV = csv.DictWriter(CLOSE,['results name','results age','database name','database dob'])
+        CLOSECSV = csv.DictWriter(CLOSE,['results name','results age','database name','database dob','ratio'])
         CLOSECSV.writeheader()
         
         # for each series - 'series' describes how to tabulate the results
         for series in theseseries:
             # tabulate each race for which there are results, if it hasn't been tabulated before
             print 'tabulating {0}'.format(series.name)
-            numentries = tabulate(session,race,resultsfile,series,active,inactive,INACT,MISSED,CLOSECSV)
+            numentries = tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,MISSEDCSV,CLOSECSV)
             print '   {0} entries processed'.format(numentries)
             
             # only collect log entries for the first series
-            if INACT:
+            if INACTCSV:
                 INACT.close()
-                INACT = None
-            if MISSED:
+                INACTCSV = None
+            if MISSEDCSV:
                 MISSED.close()
-                MISSED = None
+                MISSEDCSV = None
             if CLOSECSV:
                 CLOSE.close()
                 CLOSECSV = None

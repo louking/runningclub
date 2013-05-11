@@ -115,11 +115,12 @@ class RaceResults():
                     f = fields[fieldndx]
                     match = fieldxform[f]
                     
-                    # loop for each column in this line, trying to find match possiblities
-                    for linendx in range(len(line)):
-                        # loop for each match possiblity
+                    # loop for each match possiblity, then within the fields in file header
+                    # folding loop likes this gives precedence to the list order of the match possibilities
+                    for m in match:
+                        # loop for each column in this line, trying to find match possiblities
                         matchfound = False
-                        for m in match:
+                        for linendx in range(len(line)):                        
                             # match over the end of the line is no match
                             # m is either a string or a list of strings
                             if type(m) == str:
@@ -139,7 +140,7 @@ class RaceResults():
                         
                         # found match for this self.field
                         if matchfound: break
-                        
+                
                 # here we've gone through each self.field in the line
                 # need to match more than MINMATCHES to call it a header line
                 if fieldsfound >= MINMATCHES:
