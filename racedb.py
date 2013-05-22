@@ -67,6 +67,8 @@ t = timeu.asctime(DBDATEFMT)
 # will be handle for persistent storage in webapp
 PERSIST = None
 
+class dbConsistencyError(Exception): pass
+
 #----------------------------------------------------------------------
 def setracedb(dbfilename=None):
 #----------------------------------------------------------------------
@@ -152,6 +154,59 @@ def getprivkey():
         return None
 
 #----------------------------------------------------------------------
+def getunique(session, model, **kwargs):
+#----------------------------------------------------------------------
+    '''
+    retrieve a row from the database, raising exception of more than one row exists for query criteria
+    
+    :param session: session within which update occurs
+    :param model: table model
+    :param kwargs: query criteria
+    
+    :rtype: single instance of the row, or None
+    '''
+
+    instances = session.query(model).filter_by(**kwargs).all()
+
+    # error if query returned multiple rows when it was supposed to be unique
+    if len(instances) > 1:
+        raise dbConsistencyError, 'found multiple rows in {0} for {1}'.format(model,kwargs)
+    
+    if len(instances) == 0:
+        return None
+    
+    return instances[0]
+
+#----------------------------------------------------------------------
+def update(session, model, oldinstance, newinstance, skipcolumns=[]):
+#----------------------------------------------------------------------
+    '''
+    update an existing on based on kwargs query
+    
+    :param session: session within which update occurs
+    :param model: table model
+    :param oldinstance: instance of table model which was found in the db
+    :param newinstance: instance of table model with updated fields
+    :param skipcolumns: list of column names to update
+    :rtype: boolean indicates whether any fields have changed
+    '''
+
+    updated = False
+    
+    # update all columns except those we were told to skip
+    for col in object_mapper(newinstance).columns:
+        # skip indicated keys
+        if col.key in skipcolumns: continue
+        
+        # if any columns are different, update those columns
+        # and return to the caller that it's been updated
+        if getattr(oldinstance,col.key) != getattr(newinstance,col.key):
+            setattr(oldinstance,col.key,getattr(newinstance,col.key))
+            updated = True
+    
+    return updated
+
+#----------------------------------------------------------------------
 def insert_or_update(session, model, newinstance, skipcolumns=[], **kwargs):
 #----------------------------------------------------------------------
     '''
@@ -164,26 +219,16 @@ def insert_or_update(session, model, newinstance, skipcolumns=[], **kwargs):
     :param kwargs: query criteria
     '''
 
+
+    # get instance, if it exists
+    instance = getunique(session,model,**kwargs)
+    
+    # remember if we update anything
     updated = False
 
-    instances = session.query(model).filter_by(**kwargs).all()
-
-    # weirdness -- how'd this happen?
-    if len(instances) > 1:
-        raise dbConsistencyError, 'found multiple rows in {0} for {1}'.format(model,kwargs)
-    
     # found a matching object, may need to update some of its attributes
-    if len(instances) == 1:
-        instance = instances[0]
-        for col in object_mapper(newinstance).columns:
-            # skip indicated keys
-            if col.key in skipcolumns: continue
-            
-            # if any columns are different, update those columns
-            # and return to the caller that it's been updated
-            if getattr(instance,col.key) != getattr(newinstance,col.key):
-                setattr(instance,col.key,getattr(newinstance,col.key))
-                updated = True
+    if instance is not None:
+        updated = update(session,model,instance,newinstance,skipcolumns)
     
     # new object, just add to database
     else:
@@ -212,13 +257,14 @@ class Runner(Base):
     dateofbirth = Column(String(10))
     gender = Column(String(1))
     hometown = Column(String(50))
+    member = Column(Boolean)
     active = Column(Boolean)
 
     __table_args__ = (UniqueConstraint('name', 'dateofbirth'),)
     results = relationship("RaceResult", backref='runner', cascade="all, delete, delete-orphan")
 
     #----------------------------------------------------------------------
-    def __init__(self, name, dateofbirth, gender, hometown):
+    def __init__(self, name, dateofbirth, gender, hometown, member=True):
     #----------------------------------------------------------------------
         try:
             if dateofbirth:
@@ -233,13 +279,22 @@ class Runner(Base):
         self.dateofbirth = dateofbirth
         self.gender = gender
         self.hometown = hometown
+        self.member = member
         self.active = True
         #self.lastupdate = t.epoch2asc(time.time())
 
     #----------------------------------------------------------------------
     def __repr__(self):
     #----------------------------------------------------------------------
-        return "<Runner('%s','%s','%s','%s',active='%s')>" % (self.name, self.dateofbirth, self.gender, self.hometown, self.active)
+        if self.member:
+            dispmem = 'member'
+        else:
+            dispmem = 'nonmember'
+        if self.active:
+            dispactive = 'active'
+        else:
+            dispactive = 'inactive'
+        return "<Runner('%s','%s','%s','%s','%s','%s')>" % (self.name, self.dateofbirth, self.gender, self.hometown, dispmem, dispactive)
     
 ########################################################################
 class Race(Base):

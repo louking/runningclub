@@ -1,11 +1,12 @@
 #!/usr/bin/python
 ###########################################################################################
-# modifymembers - update club members within database
+# importmembers - update club members within database
 #
 #       Date            Author          Reason
 #       ----            ------          ------
 #       02/01/13        Lou King        Create
 #       04/04/13        Lou King        rename from updatemembers due to glitch in setuptools/windows8
+#       05/21/13        Lou King        allow non-members in database to be converted to members
 #
 #   Copyright 2013 Lou King
 #
@@ -23,7 +24,7 @@
 #
 ###########################################################################################
 '''
-modifymembers - update club members within database
+importmembers - update club members within database
 ======================================================
 
 Membership spreadsheet must have at least the following columns:
@@ -51,6 +52,11 @@ import argparse
 import version
 import clubmember
 import racedb
+from racedb import dbConsistencyError
+from loutilities import timeu
+
+# module globals
+tYmd = timeu.asctime('%Y-%m-%d')
 
 #----------------------------------------------------------------------
 def main(): 
@@ -74,36 +80,76 @@ def main():
     # get clubmembers from file
     members = clubmember.XlClubMember(args.memberfile)
     
-    # get all the runners currently in the database
+    # get all the member runners currently in the database
     # hash them into dict by (name,dateofbirth)
-    allrunners = session.query(racedb.Runner).filter_by(active=True).all()
+    allrunners = session.query(racedb.Runner).filter_by(member=True,active=True).all()
     inactiverunners = {}
     for thisrunner in allrunners:
         inactiverunners[thisrunner.name,thisrunner.dateofbirth] = thisrunner
         if OUT:
             OUT.write('found id={0}, runner={1}\n'.format(thisrunner.id,thisrunner))
     
-    # process each name in membership list
+    # process each name in new membership list
     allmembers = members.getmembers()
     for name in allmembers:
         thesemembers = allmembers[name]
         # NOTE: may be multiple members with same name
         for thismember in thesemembers:
-            # add or update runner in database
-            runner = racedb.Runner(thismember['name'],thismember['dob'],thismember['gender'],thismember['hometown'])
-            added = racedb.insert_or_update(session,racedb.Runner,runner,skipcolumns=['id'],name=runner.name,dateofbirth=runner.dateofbirth)
+            thisname = thismember['name']
+            thisdob = thismember['dob']
+            thisgender = thismember['gender']
+            thishometown = thismember['hometown']
+
+            # prep for if .. elif below by running some queries
+            dbmember = racedb.getunique(session,racedb.Runner,member=True,name=thisname,dateofbirth=thisdob)
+            if dbmember is None:
+                dbnonmember = racedb.getunique(session,racedb.Runner,member=False,name=thisname)
+                # TODO: there's a slim possibility that there are two nonmembers with the same name, but I'm sure we've already
+                # bolloxed that up in importresult as there's no way to discriminate between the two
             
+            # see if this runner is a member in the database already, or was a member once and make the update
+            # add or update runner in database
+            # get instance, if it exists, and make any updates
+            found = False
+            if dbmember is not None:
+                thisrunner = racedb.Runner(thisname,thisdob,thisgender,thishometown)
+                added = racedb.update(session,racedb.Runner,dbmember,thisrunner,skipcolumns=['id'])
+                found = True
+                
+            # if runner's name is in database, but not a member, see if this runner is a nonmemember which can be converted
+            # Check first result for age against age within the input file
+            # if ages match, convert nonmember to member
+            elif dbnonmember is not None:
+                # nonmember came into the database due to a nonmember race result, so we can use any race result to check nonmember's age
+                result = session.query(racedb.RaceResult).filter_by(runnerid=dbnonmember.id).first()
+                resultage = result.agage
+                racedate = tYmd.asc2dt(result.race.date)
+                dob = tYmd.asc2dt(thisdob)
+                expectedage = racedate.year - dob.year - int((racedate.month, racedate.day) < (dob.month, dob.day))
+                # we found the right person
+                if resultage == expectedage:
+                    thisrunner = racedb.Runner(thisname,thisdob,thisgender,thishometown)
+                    added = racedb.update(session,racedb.Runner,dbnonmember,thisrunner,skipcolumns=['id'])
+                    found = True
+                else:
+                    print '{} found in database, wrong age, expected {} found {} in {}'.format(thisname,expectedage,resultage,result)
+                    # TODO: need to make file for these, also need way to force update, because maybe bad date in database for result
+                    # currently this will cause a new runner entry
+            
+            # if runner was not found in database, just insert new runner
+            if not found:
+                thisrunner = racedb.Runner(thisname,thisdob,thisgender,thishometown)
+                added = racedb.insert_or_update(session,racedb.Runner,thisrunner,skipcolumns=['id'],name=thisname,dateofbirth=thisdob)
+                
             # remove this runner from collection of runners which should be deactivated in database
-            #if runner.name == 'Lou King':
-            #    pdb.set_trace()
-            if (runner.name,runner.dateofbirth) in inactiverunners:
-                inactiverunners.pop((runner.name,runner.dateofbirth))
+            if (thisrunner.name,thisrunner.dateofbirth) in inactiverunners:
+                inactiverunners.pop((thisrunner.name,thisrunner.dateofbirth))
                 
             if OUT:
                 if added:
-                    OUT.write('added or updated {0}\n'.format(runner))
+                    OUT.write('added or updated {0}\n'.format(thisrunner))
                 else:
-                    OUT.write('no updates necessary {0}\n'.format(runner))
+                    OUT.write('no updates necessary {0}\n'.format(thisrunner))
     
     # any runners remaining in 'inactiverunners' should be deactivated
     for (name,dateofbirth) in inactiverunners:

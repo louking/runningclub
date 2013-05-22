@@ -61,7 +61,7 @@ class BaseRaceHandler():
         self.session = session
     
     #----------------------------------------------------------------------
-    def prepare(self,year,racename,orderby):
+    def prepare(self,year,racename,orderby,nonmembers):
     #----------------------------------------------------------------------
         '''
         prepare output file for output, including as appropriate
@@ -76,6 +76,7 @@ class BaseRaceHandler():
         :param year: year of race
         :param racename: name of race
         :param orderby: how results are ordered
+        :param nonmembers: True to suppress note about inclusion of members only
         '''
 
         pass
@@ -230,7 +231,7 @@ class ListRaceHandler():
         self.fhlist.append(fh)
         
     #----------------------------------------------------------------------
-    def prepare(self,year,racename,orderby):
+    def prepare(self,year,racename,orderby,nonmembers):
     #----------------------------------------------------------------------
         '''
         prepare output file for output, including as appropriate
@@ -245,10 +246,11 @@ class ListRaceHandler():
         :param year: year of race
         :param racename: name of race
         :param orderby: how results are ordered
+        :param nonmembers: True to suppress note about inclusion of members only
         '''
 
         for fh in self.fhlist:
-            fh.prepare(year,racename,orderby)
+            fh.prepare(year,racename,orderby,nonmembers)
     
     #----------------------------------------------------------------------
     def clearline(self):
@@ -397,7 +399,7 @@ class TxtRaceHandler(BaseRaceHandler):
         self.timeprecision,self.agtimeprecision = render.getprecision(distance)
     
     #----------------------------------------------------------------------
-    def prepare(self,year,racename,orderby):
+    def prepare(self,year,racename,orderby,nonmembers):
     #----------------------------------------------------------------------
         '''
         prepare output file for output, including as appropriate
@@ -412,6 +414,7 @@ class TxtRaceHandler(BaseRaceHandler):
         :param year: year of race
         :param racename: name of race
         :param orderby: how results are ordered
+        :param nonmembers: True to suppress note about inclusion of members only
         '''
         
         # open output file
@@ -423,7 +426,8 @@ class TxtRaceHandler(BaseRaceHandler):
         
         # render race
         self.TXT.write("{0} {1} - {2} results, ordered by {3}\n".format(year,racename,rengen,orderby))
-        self.TXT.write('\tNOTE: these results only show the FSRC members who ran the race\n')
+        if not nonmembers:
+            self.TXT.write('\tNOTE: these results only show the FSRC members who ran the race\n')
         self.TXT.write('\n')
 
         # set up cols format string, and render header
@@ -599,16 +603,16 @@ class XlRaceHandler(BaseRaceHandler):
             'name': xlwt.easyxf('font: height 200'),
             'age': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='general'),
             'time0': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='h:mm:ss;@'),
-            'stime0': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='mm:ss;@'),
-            'time1': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='mm:ss.0;@'),
-            'time2': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='mm:ss.00;@'),
+            'stime0': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='m:ss;@'),
+            'time1': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='m:ss.0;@'),
+            'time2': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='m:ss.00;@'),
             'agfactor': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='0.0000'),
             'agpercent': xlwt.easyxf('align: horiz center; font: height 200',num_format_str='0.00'),
             }
     
         # set time styles based on distance
         timeprecision,agtimeprecision = render.getprecision(distance)
-
+        
         if   timeprecision == 1:   self.style['time'] = self.style['time1']
         elif timeprecision == 2:   self.style['time'] = self.style['time2']
         elif distance <= 3.2:      self.style['time'] = self.style['stime0']
@@ -640,7 +644,7 @@ class XlRaceHandler(BaseRaceHandler):
         self.usebold = bold
         
     #----------------------------------------------------------------------
-    def prepare(self,year,racename,orderby):
+    def prepare(self,year,racename,orderby,nonmembers):
     #----------------------------------------------------------------------
         '''
         prepare output file for output, including as appropriate
@@ -655,9 +659,9 @@ class XlRaceHandler(BaseRaceHandler):
         :param year: year of race
         :param racename: name of race
         :param orderby: how results are ordered
+        :param nonmembers: True to suppress note about inclusion of members only
         '''
         
-        # TODO: add sortby to output file name
         # open output file
         MF = {'F':'Women','M':'Men'}
         rengen = 'Overall'
@@ -678,9 +682,11 @@ class XlRaceHandler(BaseRaceHandler):
         colnum = 0
         self.ws.write(self.rownum,colnum,"{0} {1} - {2} results, ordered by {3}".format(year,racename,resulttype,ob),self.style['majorhdr'])
         self.rownum += 1
-        colnum = 1
-        self.ws.write(self.rownum,colnum,"NOTE: these results only show the FSRC members who ran the race",self.style['note'])
-        self.rownum += 2
+        if not nonmembers:
+            colnum = 1
+            self.ws.write(self.rownum,colnum,"NOTE: these results only show the FSRC members who ran the race",self.style['note'])
+            self.rownum += 1
+        self.rownum += 1
         
         # set up column numbers -- reset for each series
         self.colnum = {}
@@ -835,7 +841,7 @@ class XlRaceHandler(BaseRaceHandler):
             xltime = agtime / (24*60*60.0)    # convert seconds to days
 
         # maybe override time style
-        timestyle = self.style['time']
+        timestyle = self.style['agtime']
         if agtime >= 60*60:
             timestyle = self.style['time0']
         
@@ -892,13 +898,14 @@ class RaceRenderer():
     :param \*\*resultfilter: filter parameters for racedb.RaceResult table
     '''
     #----------------------------------------------------------------------
-    def __init__(self,session,racename,raceid,orderby,hightolow,**resultfilter):
+    def __init__(self,session,racename,raceid,orderby,hightolow,nonmembers,**resultfilter):
     #----------------------------------------------------------------------
         self.session = session
         self.racename = racename
         self.raceid = raceid
         self.orderby = orderby
         self.hightolow = hightolow
+        self.nonmembers = nonmembers
         self.resultfilter = resultfilter
         
     #----------------------------------------------------------------------
@@ -917,11 +924,12 @@ class RaceRenderer():
         year = race.year
         
         # open file, prepare header, etc
-        fh.prepare(year,self.racename,self.orderby)
+        fh.prepare(year,self.racename,self.orderby,self.nonmembers)
                 
-        # just use first series found, and get the results associated with this race / series
-        series = self.session.query(racedb.Series).join("results").first()
-        allresults = self.session.query(racedb.RaceResult).filter_by(raceid=self.raceid,seriesid=series.id,**self.resultfilter).all()
+        # use first series found for this race, and get the results associated with this race / series
+        #series = self.session.query(racedb.Series).join("results").first()
+        raceseries = self.session.query(racedb.RaceSeries).filter_by(raceid=self.raceid).first()
+        allresults = self.session.query(racedb.RaceResult).filter_by(raceid=self.raceid,seriesid=raceseries.seriesid,**self.resultfilter).all()
             
         # sort results based on self.orderby field and highlow directive
         dresults = [(getattr(r,self.orderby),r) for r in allresults]
@@ -956,12 +964,14 @@ def main():
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
     parser.add_argument('-o','--orderby',help='name of RaceResult field to order results by (default %(default)s)',default='time')
     parser.add_argument('-H','--hightolow',help='use if results are to be ordered high value to low value',action='store_true')
+    parser.add_argument('-n','--nonmembers',help='use to suppress note about members only being part of rendered race',action='store_true')
     parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     args = parser.parse_args()
     
     raceid = args.raceid
     orderby = args.orderby
     hightolow = args.hightolow
+    nonmembers = args.nonmembers
     
     racedb.setracedb(args.racedb)
     session = racedb.Session()
@@ -982,7 +992,7 @@ def main():
         fh.addhandler(XlRaceHandler(session,race.distance,**resultfilter))
         
         # render the results, according to specifications
-        rr = RaceRenderer(session,race.name,raceid,orderby,hightolow,**resultfilter)
+        rr = RaceRenderer(session,race.name,raceid,orderby,hightolow,nonmembers,**resultfilter)
         rr.renderrace(fh)
 
     session.close()

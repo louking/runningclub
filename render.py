@@ -73,7 +73,7 @@ def getprecision(distance):
         
     # include 1 mile - shouldn't be rounding problem so no fudge factor required
     elif distance <= 1.0:
-        timeprecision = 0
+        timeprecision = 1
         agtimeprecision = 1
         
     # distances > 1 mile

@@ -137,6 +137,40 @@ class AgeGrade():
             C.close()
             
     #----------------------------------------------------------------------
+    def getfactorstd(self,age,gen,distmeters):
+    #----------------------------------------------------------------------
+        '''
+        interpolate factor and openstd based on distance for this age
+        
+        :param age: integer age.  If float is supplied, integer portion is used (no interpolation of fractional age)
+        :param gen: gender - M or F
+        :param distmeters: distance (meters)
+        
+        :rtype: (factor, openstd) - factor (age grade factor) is between 0 and 1, openstd (open standard) is in seconds
+        '''
+        
+        # find surrounding Xi points, and corresponding Fi, OCi points
+        distlist = self.agegradedata[gen].keys()
+        distlist.sort()
+        lastd = distlist[0]
+        for i in range(1,len(distlist)):
+            if distmeters <= distlist[i]:
+                x0 = lastd
+                x1 = distlist[i]
+                f0 = self.agegradedata[gen][x0][age]
+                f1 = self.agegradedata[gen][x1][age]
+                oc0 = self.agegradedata[gen][x0]['OC']
+                oc1 = self.agegradedata[gen][x1]['OC']
+                break
+            lastd = distlist[i]
+            
+        # interpolate factor and openstd (see http://en.wikipedia.org/wiki/Linear_interpolation)
+        factor = f0 + (f1-f0)*((distmeters-x0)/(x1-x0))
+        openstd = oc0 + (oc1-oc0)*((distmeters-x0)/(x1-x0))
+        
+        return factor,openstd
+    
+    #----------------------------------------------------------------------
     def agegrade(self,age,gen,distmiles,time):
     #----------------------------------------------------------------------
         '''
@@ -151,10 +185,9 @@ class AgeGrade():
         '''
         
         # check for some input errors
+        gen = gen.upper()
         if gen not in ['F','M']:
             raise parameterError, 'gen must be M or F'
-        if age not in range(5,100):
-            raise parameterError, 'age must be integer between 5 and 99 inclusive'
 
         # number of meters in a mile -- close enough for this data set
         mpermile = 1609
@@ -173,25 +206,30 @@ class AgeGrade():
         minmeters = min(distlist)
         maxmeters = max(distlist)
         if distmeters < minmeters or distmeters > maxmeters:
-            raise parameterError, 'distmiles must be between {0:f0.3} and {1:f0.1}'.format(minmeters/mpermile,maxmeters/minpermile)
+            raise parameterError, 'distmiles must be between {0:f0.3} and {1:f0.1}'.format(minmeters/mpermile,maxmeters/mpermile)
 
-        # find surrounding Xi points, and corresponding Fi, OCi points
-        distlist.sort()
-        lastd = distlist[0]
-        for i in range(1,len(distlist)):
-            if distmeters <= distlist[i]:
-                x0 = lastd
-                x1 = distlist[i]
-                f0 = self.agegradedata[gen][x0][age]
-                f1 = self.agegradedata[gen][x1][age]
-                oc0 = self.agegradedata[gen][x0]['OC']
-                oc1 = self.agegradedata[gen][x1]['OC']
-                break
-            lastd = distlist[i]
+        # interpolate factor and openstd based on distance for this age
+        age = int(age)
+        if age in range(5,100):
+            factor,openstd = self.getfactorstd(age,gen,distmeters)
+        
+        # extrapolate for ages < 5
+        elif age < 5:
+            age1 = 5
+            age2 = 6
+            factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
+            factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
+            factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
+            openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
             
-        # interpolate factor and openstd (see http://en.wikipedia.org/wiki/Linear_interpolation)
-        factor = f0 + (f1-f0)*((distmeters-x0)/(x1-x0))
-        openstd = oc0 + (oc1-oc0)*((distmeters-x0)/(x1-x0))
+         # extrapolate for ages > 99
+        elif age > 99:
+            age1 = 98
+            age2 = 99
+            factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
+            factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
+            factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
+            openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
         
         # return age grade statistics
         agpercentage = 100*(openstd/factor)/time

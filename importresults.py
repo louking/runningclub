@@ -1,11 +1,12 @@
 #!/usr/bin/python
 ###########################################################################################
-#   modifyresults - add results file to race database
+#   importresults - add results file to race database
 #
 #       Date            Author          Reason
 #       ----            ------          ------
 #       01/21/13        Lou King        Create
 #       04/04/13        Lou King        rename from updateresults due to glitch in setuptools/windows8
+#       05/19/13        Lou King        add support for nonmember races
 #
 #   Copyright 2013 Lou King
 #
@@ -23,7 +24,7 @@
 #
 ###########################################################################################
 '''
-modifyresults - add results file to race database
+importresults - add results file to race database
 ==========================================================
 '''
 
@@ -57,7 +58,7 @@ DEBUG = None
 ag = agegrade.AgeGrade()
 
 #----------------------------------------------------------------------
-def tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,MISSEDCSV,CLOSECSV): 
+def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV): 
 #----------------------------------------------------------------------
     '''
     collect the data, as directed by series attributes
@@ -69,6 +70,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,M
     :param series: racedb.Series object - describes how to calculate results
     :param active: active members as produced by clubmember.ClubMember()
     :param inactive: inactive members as produced by clubmember.ClubMember()
+    :param nonmember: nonmembers as produced by clubmember.ClubMember()
     :param INACTCSV: filehandle to write inactive member log entries, if desired (else None)
     :param MISSEDCSV: filehandle to write log of members which did not match age based on dob in database, if desired (else None)
     :param CLOSECSV: filehandle to write log of members which matched, but not exactly, if desired (else None)
@@ -119,6 +121,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,M
         # for these, don't tabulate unless member found
         foundmember = active.findmember(result['name'],result['age'],race.date)
         foundinactive = inactive.findmember(result['name'],result['age'],race.date)
+        foundnonmember = nonmember.findname(result['name'])
         
         # log member names found, but which did not match birth date
         if MISSEDCSV and not foundmember:
@@ -137,22 +140,18 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,M
                 INACTCSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
             continue
         
-        # for members and inactivemembers, get name, id and genderfrom database (will replace that which was used in results file)
-        if foundmember:
-            name,ascdob = foundmember
-            if CLOSECSV and name.strip().lower() != result['name'].strip().lower():
-                ratio = clubmember.getratio(result['name'],name)
-                CLOSECSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
-        elif foundinactive:
-            name,ascdob = foundinactive
-        
-        if DEBUG: 
-            if foundmember:
-                DEBUG.write('{0},{1},{2},{3}\n'.format(result['name'],result['age'],'y',name))
-            else:
-                DEBUG.write('{0},{1},{2},{3}\n'.format(result['name'],result['age'],'',''))
-
+        # for members or people who were once members, set age based on date of birth in database
         if foundmember or foundinactive:
+            # for members and inactivemembers, get name, id and genderfrom database (will replace that which was used in results file)
+            if foundmember:
+                name,ascdob = foundmember
+                if CLOSECSV and name.strip().lower() != result['name'].strip().lower():
+                    ratio = clubmember.getratio(result['name'],name)
+                    CLOSECSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
+            elif foundinactive:
+                name,ascdob = foundinactive
+        
+            # get runner from database
             runner = session.query(racedb.Runner).filter_by(name=name,dateofbirth=ascdob).first()
             runnerid = runner.id
             gender = runner.gender
@@ -167,8 +166,24 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,M
         
             # for members, set agegrade age (race date based) 
             agegradeage = racedate.year - dob.year - int((racedate.month, racedate.day) < (dob.month, dob.day))
+        
+        # maybe nonmember was found in the database
+        # TODO: there may be misspellings in the results file for non-members -- if this occurs, may need to make this more robust
+        elif foundnonmember:
+            # TODO: how to handle corner case when there are two matching nonmembers of different ages?
+            name = foundnonmember
             
-        # for non-members, set agegrade age based on results file
+            # get runner from database
+            runner = session.query(racedb.Runner).filter_by(name=name,member=False).first()
+            runnerid = runner.id
+            gender = runner.gender
+            
+            try:
+                agegradeage = int(result['age'])
+            except:
+                agegradeage = None
+
+        # for new non-members, set agegrade age based on results file
         # if non-member, no division awards, because age as of Jan 1 is not known
         # TODO: there may be misspellings in the results file for non-members -- if this occurs, may need to make this more robust
         else:
@@ -180,13 +195,26 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,M
                 agegradeage = int(result['age'])
             except:
                 agegradeage = None
+                
+            # create the nonmember in the database (no date of birth or hometown)
+            runner = racedb.Runner(name,None,gender,None,member=False)
+            added = racedb.insert_or_update(session,racedb.Runner,runner,skipcolumns=['id'],name=runner.name,dateofbirth=None,member=False)
+            runnerid = runner.id
+            
+        # may need to write to debug file
+        if DEBUG: 
+            if foundmember:
+                DEBUG.write('{0},{1},{2},{3},{4}\n'.format(result['name'],result['age'],'y',name,'foundmember'))
+            elif foundinactive:
+                DEBUG.write('{0},{1},{2},{3},{4}\n'.format(result['name'],result['age'],'y',name,'foundinactive'))
+            elif foundnonmember:
+                DEBUG.write('{0},{1},{2},{3},{4}\n'.format(result['name'],result['age'],'y',name,'foundnonmember'))
+            else:
+                DEBUG.write('{0},{1},{2},{3},{4}\n'.format(result['name'],result['age'],'',name,'new nonmember'))
 
-        # logic assumes this is always set
+        # at this point, there should always be a runnerid in the database, even if non-member
         resulttime = result['time']
-        if foundmember or foundinactive:
-            raceresult = racedb.RaceResult(runnerid,race.id,series.id,resulttime,gender,agegradeage)
-        else:
-            raceresult = racedb.RaceResult(0,race.id,series.id,resulttime,gender,agegradeage,runnername=name)
+        raceresult = racedb.RaceResult(runnerid,race.id,series.id,resulttime,gender,agegradeage)
 
         # always add age grade to result if we know the age
         # we will decide whether to render, later based on series.calcagegrade, in another script
@@ -349,6 +377,7 @@ def main():
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
     parser.add_argument('-f','--resultsfile',help='file with results information',default=None)
     parser.add_argument('-e','--excludefile',help='file with list of racers to exclude, same format as "close-<resultsfile>.csv"',default=None)
+    parser.add_argument('-F','--force',help='force action without user prompt',action='store_true')
     parser.add_argument('-d','--delete',help='delete results for this race',action='store_true')
     parser.add_argument('-c','--cutoff',help='cutoff for close match lookup (default %(default)0.2f)',type=float,default=0.7)
     parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
@@ -358,19 +387,24 @@ def main():
     raceid = args.raceid
     resultsfile = args.resultsfile
     excludefile = args.excludefile
+    force = args.force
     
     if args.debug:
         global DEBUG
         DEBUG = open('updateresults.txt','w')
-        DEBUG.write('name in race,age in race,found,member name\n')
+        DEBUG.write('name in race,age in race,found,member name,status\n')
     
-    # get active and inactive members
+    # get active and inactive members, as well as nonmembers
     if args.racedb:
         racedbfile = args.racedb
     else:
         racedbfile = racedb.getdbfilename()
-    active = clubmember.DbClubMember(racedbfile,cutoff=args.cutoff,active=True)
-    inactive = clubmember.DbClubMember(racedbfile,cutoff=args.cutoff,active=False)
+    active = clubmember.DbClubMember(racedbfile,cutoff=args.cutoff,member=True,active=True)
+    inactive = clubmember.DbClubMember(racedbfile,cutoff=args.cutoff,member=True,active=False)
+    
+    # insist on high cutoff for nonmember matching
+    NONMEMBERCUTOFF = 0.9
+    nonmember = clubmember.DbClubMember(racedbfile,cutoff=NONMEMBERCUTOFF,member=False)
     
     # open race database
     racedb.setracedb(racedbfile)
@@ -394,13 +428,15 @@ def main():
         print '*** no race results found for {0} {1}'.format(race.year,race.name)
         return
     
-    action = 'update'
-    if args.delete:
-        action = 'delete'
-    answer = raw_input('{0} results for {1} {2} {3}? (type yes) '.format(action,race.year,race.name,exists))
-    if answer != 'yes':
-        print '*** race update aborted -- no changes made'
-        return
+    # prompt user to verify update/delete of this race's results, if not "forced"
+    if not force:
+        action = 'update'
+        if args.delete:
+            action = 'delete'
+        answer = raw_input('{0} results for {1} {2} {3}? (type yes) '.format(action,race.year,race.name,exists))
+        if answer != 'yes':
+            print '*** race update aborted -- no changes made'
+            return
     
     # first delete all results for this race
     numdeleted = session.query(racedb.RaceResult).filter_by(raceid=raceid).delete()
@@ -443,7 +479,7 @@ def main():
         for series in theseseries:
             # tabulate each race for which there are results, if it hasn't been tabulated before
             print 'tabulating {0}'.format(series.name)
-            numentries = tabulate(session,race,resultsfile,excluded,series,active,inactive,INACTCSV,MISSEDCSV,CLOSECSV)
+            numentries = tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV)
             print '   {0} entries processed'.format(numentries)
             
             # only collect log entries for the first series

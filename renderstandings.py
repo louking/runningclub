@@ -825,17 +825,17 @@ class StandingsRenderer():
                     byrunner[name]['bydivision'].append('')
                     
             # accumulate points for this result
-            # if result is ordered by time, genderplace and divisionplace are used
+            # if result is ordered by time, genderplace and divisionplace may be used
             if self.orderby == racedb.RaceResult.time:
                 # if result points depend on the number of runners, update maxgenpoints
                 if byrunner:
-                    maxgenpoints = len(allresults)
+                    self.maxgenpoints = len(allresults)
                 
                 # if starting at the top (i.e., maxgenpoints is non-zero, accumulate points accordingly
-                if maxgenpoints:
+                if self.maxgenpoints:
                     genpoints = self.multiplier*(self.maxgenpoints+1-result.genderplace)
                 
-                # otherwise, accumulate from the bottom (this should never happen)
+                # otherwise, accumulate from the bottom
                 else:
                     genpoints = self.multiplier*result.genderplace
                 
@@ -866,26 +866,25 @@ class StandingsRenderer():
                 #    divpoints = self.multiplier*(self.maxdivpoints+1-result.divisionplace)
                 #    byrunner[name]['bydivision'].append(max(divpoints,0))
             
+            # if result is ordered by agtime, agtimeplace may be used -- assume no divisions
             elif self.orderby == racedb.RaceResult.agtime:
-                # TODO: this section needs to be updated (for decathlon), currently cut/paste from orderby time
-                
                 # if result points depend on the number of runners, update maxgenpoints
                 if byrunner:
-                    maxgenpoints = len(allresults)
+                    self.maxgenpoints = len(allresults)
                 
                 # if starting at the top (i.e., maxgenpoints is non-zero, accumulate points accordingly
-                if maxgenpoints:
-                    genpoints = self.multiplier*(self.maxgenpoints+1-result.genderplace)
+                if self.maxgenpoints:
+                    genpoints = self.multiplier*(self.maxgenpoints+1-result.agtimeplace)
                 
-                # otherwise, accumulate from the bottom (this should never happen)
+                # otherwise, accumulate from the bottom
                 else:
-                    genpoints = self.multiplier*result.genderplace
+                    genpoints = self.multiplier*result.agtimeplace
                 
                 byrunner[name]['bygender'].append(max(genpoints,0))
-                if self.bydiv:
-                    divpoints = self.multiplier*(self.maxdivpoints+1-result.divisionplace)
-                    byrunner[name]['bydivision'].append(max(divpoints,0))
-            
+                #if self.bydiv:
+                #    divpoints = self.multiplier*(self.maxdivpoints+1-result.divisionplace)
+                #    byrunner[name]['bydivision'].append(max(divpoints,0))
+                #
             else:
                 raise parameterError, 'results must be ordered by time, agtime or agpercent'
             
@@ -928,10 +927,15 @@ class StandingsRenderer():
                 for div in divisions:
                     divrunner[div] = []
                 
+            # pick up active races for this series, in racenum order
             racesprocessed = 0
-            for race in self.session.query(racedb.Race).join("results").all():
+            racenums = []
+            for race in self.session.query(racedb.Race).filter_by(active=True).join("series").filter_by(seriesid=self.series.id).order_by(racedb.Race.racenum):
+                # skip races not included in this series (note race.series points at raceseries table)
+                #if self.series.id not in [s.seriesid for s in race.series]: continue
                 self.collectstandings(racesprocessed,gen,race.id,byrunner,divrunner)
                 racesprocessed += 1
+                racenums.append(race.racenum)
                 
             # render standings
             # first by division
@@ -985,10 +989,10 @@ class StandingsRenderer():
                         lastpoints = totpoints
                         
                         # render race results
-                        racenum = 1
+                        iracenums = iter(racenums)
                         for pts in byrunner[name]['bydivision']:
+                            racenum = next(iracenums)
                             fh.setrace(gen,racenum,pts)
-                            racenum += 1
                         fh.render(gen)
                         
                     # skip line between divisions
@@ -1034,10 +1038,10 @@ class StandingsRenderer():
                 lastpoints = totpoints
                 
                 # render race results
-                racenum = 1
+                iracenums = iter(racenums)
                 for pts in byrunner[name]['bygender']:
+                    racenum = next(iracenums)
                     fh.setrace(gen,racenum,pts)
-                    racenum += 1
                 fh.render(gen)
             fh.skipline(gen)
                         

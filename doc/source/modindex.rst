@@ -5,6 +5,7 @@ Module Index
 
     installation
     releasenotes
+    versioning
     
     agegrade
     clubmember

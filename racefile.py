@@ -103,7 +103,6 @@ class RaceFile():
         for rowndx in range(1,nrows):
             thisrow_list = races_sheet.row_values(rowndx)
             thisrow_dict = dict(zip(raceshdr,thisrow_list))
-            thisrow_dict['racenum'] = rowndx
 
             # series are indicated in the file, delimited by ','
             thisrace_series = []

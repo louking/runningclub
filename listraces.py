@@ -61,16 +61,24 @@ def listraces(session,year=None):
     # and print the relevant information
     RACELEN = 40
     IDLEN = 6
-    cols = '{0:' + str(IDLEN) + 's} {1:10s} {2:' + str(RACELEN) + 's} {3:30s}'
-    print cols.format('raceid','date','race','series')
+    RESULTLEN = len('results')
+    cols = '{0:' + str(IDLEN) + 's} {1:10s} {2:' + str(RACELEN) + 's} {3:' + str(RESULTLEN) + 's} {4:30s}'
+    print cols.format('raceid','date','race','results','series')
     for race in session.query(racedb.Race).order_by(racedb.Race.year,racedb.Race.racenum).filter_by(**filters):
         theseseries = []
+
+        if len(race.results) > 0:
+            results = '   Y'.ljust(RESULTLEN)
+        else:
+            results = ''.ljust(RESULTLEN)
+        
         for rs in session.query(racedb.RaceSeries).filter_by(raceid=race.id,active=True):
             series = session.query(racedb.Series).filter_by(id=rs.seriesid,active=True).first()
             theseseries.append(series.name)
             
         seriesdisplay = ','.join(theseseries)
-        print cols.format(str(race.id).rjust(IDLEN),race.date,race.name[0:RACELEN],seriesdisplay)
+        
+        print cols.format(str(race.id).rjust(IDLEN),race.date,race.name[0:RACELEN],results,seriesdisplay)
         
 #----------------------------------------------------------------------
 def main(): 

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ###########################################################################################
-# modifyraces - update race information within database
+# importraces - update race information within database
 #
 #       Date            Author          Reason
 #       ----            ------          ------
@@ -23,7 +23,7 @@
 #
 ###########################################################################################
 '''
-modifyraces - update race information within database
+importraces - update race information within database
 ======================================================
 
 Race spreadsheet must have at least the following sheets/columns:

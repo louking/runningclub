@@ -167,7 +167,7 @@ class ClubMember():
         if not matches: return None
         
         foundmember = False
-        membersage = None
+        memberage = None
         checkmembers = iter([matches['matchingmembers'][0]['name']] + matches['closematches'])
         while not foundmember:
             try:
@@ -197,6 +197,42 @@ class ClubMember():
                 
         if foundmember:
             return membername,member['dob']
+        else:
+            return None
+        
+    #----------------------------------------------------------------------
+    def findname(self,name):
+    #----------------------------------------------------------------------
+        '''
+        returns a name if within the list
+        
+        if name wasn't found, None is returned
+        any age checking needs to be done outside this method
+        
+        :param name: name to search for
+        :rtype: name or None if not found
+        '''
+        
+        matches = self.getmember(name)
+        
+        if not matches: return None
+        
+        # TODO: this is probably overly complicated due to cut/paste from findmember.  Cleanup would provide first 'matchingmember'
+        foundname = False
+        checkmembers = iter([matches['matchingmembers'][0]['name']] + matches['closematches'])
+        while not foundname:
+            try:
+                checkmember = next(checkmembers)
+            except StopIteration:
+                break
+            matches = self.getmember(checkmember)
+            if len(matches['matchingmembers']) > 0:
+                # assume match for first member found
+                foundname = True
+                membername = matches['matchingmembers'][0]['name']
+                
+        if foundname:
+            return membername
         else:
             return None
         
@@ -262,6 +298,18 @@ class DbClubMember(ClubMember):
                 xl = None
             return xl
         
+        def _city(s,f):
+            if f:
+                return ','.join(f.split(',')[0:-1])
+            else:
+                return None
+        
+        def _state(s,f):
+            if f:
+                return lambda s,f: f.split(',')[-1]
+            else:
+                return None
+        
         # map database table column names to output column names, and optionally function for transformation
         # function x is x(s,f), where s is session, f is field value
         # note it is ok to split name like this, because it will just get joined together when the csv is processed in clubmember
@@ -269,7 +317,7 @@ class DbClubMember(ClubMember):
         hdrmap = {'dateofbirth':{'DOB':_dob2excel},
                   'gender':'Gender',
                   'name':{'First':lambda s,f: ' '.join(f.split(' ')[0:-1]),'Last':lambda s,f: f.split(' ')[-1]},
-                  'hometown':{'City':lambda s,f: ','.join(f.split(',')[0:-1]), 'State': lambda s,f: f.split(',')[-1]}
+                  'hometown':{'City':_city, 'State':_state}
                     }
         d.addtable('Sheet1',s,racedb.Runner,hdrmap,**kwfilter)
         
