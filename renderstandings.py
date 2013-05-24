@@ -767,9 +767,10 @@ class StandingsRenderer():
     :param maxgenpoints: maximum number of points by gender for first place result.  If None, standings are tallied directly
     :param maxdivpoints: maximum number of points by division for first place result
     :param maxraces: maximum number of races run by a runner to be included in total points
+    :param maxbynumrunners: True if maximum points is based on the number of runners for the race
     '''
     #----------------------------------------------------------------------
-    def __init__(self,session,series,orderby,hightolow,bydiv,avgtie,multiplier=1,maxgenpoints=None,maxdivpoints=None,maxraces=None):
+    def __init__(self,session,series,orderby,hightolow,bydiv,avgtie,multiplier=1,maxgenpoints=None,maxdivpoints=None,maxraces=None,maxbynumrunners=False):
     #----------------------------------------------------------------------
         self.session = session
         self.series = series
@@ -781,6 +782,7 @@ class StandingsRenderer():
         self.maxgenpoints = maxgenpoints
         self.maxdivpoints = maxdivpoints
         self.maxraces = maxraces
+        self.maxbynumrunners = maxbynumrunners
         
     #----------------------------------------------------------------------
     def collectstandings(self,racesprocessed,gen,raceid,byrunner,divrunner): 
@@ -828,7 +830,7 @@ class StandingsRenderer():
             # if result is ordered by time, genderplace and divisionplace may be used
             if self.orderby == racedb.RaceResult.time:
                 # if result points depend on the number of runners, update maxgenpoints
-                if byrunner:
+                if self.maxbynumrunners:
                     self.maxgenpoints = len(allresults)
                 
                 # if starting at the top (i.e., maxgenpoints is non-zero, accumulate points accordingly
@@ -963,7 +965,9 @@ class StandingsRenderer():
                         racetotals.sort(reverse=True)
                         # total numbers only, and convert to int if possible
                         racetotals = [r for r in racetotals if type(r) in [int,float]]
-                        totpoints = sum(racetotals[:min(self.maxraces,len(racetotals))])
+                        racesused = racetotals[:min(self.maxraces,len(racetotals))]
+                        byrunner[name]['racesused'] = racesused[:]  # NOTE: this field will be reinitialized for overall / gender standings
+                        totpoints = sum(racesused)
                         # render as integer if result same as integer
                         totpoints = int(totpoints) if totpoints == int(totpoints) else totpoints
                         bypoints.append((totpoints,name))
@@ -992,7 +996,11 @@ class StandingsRenderer():
                         iracenums = iter(racenums)
                         for pts in byrunner[name]['bydivision']:
                             racenum = next(iracenums)
-                            fh.setrace(gen,racenum,pts)
+                            if pts in byrunner[name]['racesused']:
+                                fh.setrace(gen,racenum,pts)
+                                byrunner[name]['racesused'].remove(pts)
+                            else:
+                                fh.setrace(gen,racenum,pts,stylename='race-dropped')
                         fh.render(gen)
                         
                     # skip line between divisions
@@ -1013,7 +1021,9 @@ class StandingsRenderer():
                 racetotals.sort(reverse=True)
                 # total numbers only, and convert to int if possible
                 racetotals = [r for r in racetotals if type(r) in [int,float]]
-                totpoints = sum(racetotals[:min(self.maxraces,len(racetotals))])
+                racesused = racetotals[:min(self.maxraces,len(racetotals))]
+                byrunner[name]['racesused'] = racesused[:]  # NOTE: this field will be reinitialized for overall / gender standings
+                totpoints = sum(racesused)
                 totpoints = int(totpoints) if totpoints == int(totpoints) else totpoints
                 bypoints.append((totpoints,name))
             
@@ -1041,8 +1051,13 @@ class StandingsRenderer():
                 iracenums = iter(racenums)
                 for pts in byrunner[name]['bygender']:
                     racenum = next(iracenums)
-                    fh.setrace(gen,racenum,pts)
+                    if pts in byrunner[name]['racesused']:
+                        fh.setrace(gen,racenum,pts)
+                        byrunner[name]['racesused'].remove(pts)
+                    else:
+                        fh.setrace(gen,racenum,pts,stylename='race-dropped')
                 fh.render(gen)
+
             fh.skipline(gen)
                         
         # done with rendering
@@ -1078,7 +1093,7 @@ def main():
         # TODO: now that we are passing series object, can remove many of the parameters
         rr = StandingsRenderer(session,series,orderby,series.hightolow,series.divisions,
                                series.averagetie,multiplier=series.multiplier,maxgenpoints=series.maxgenpoints,
-                               maxdivpoints=series.maxdivpoints,maxraces=series.maxraces)
+                               maxdivpoints=series.maxdivpoints,maxraces=series.maxraces,maxbynumrunners=series.maxbynumrunners)
         rr.renderseries(fh)
 
     session.close()
