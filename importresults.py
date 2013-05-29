@@ -136,7 +136,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,
         if series.membersonly and not foundmember:
             if foundinactive and INACTCSV:
                 name,ascdob = foundinactive
-                ratio = clubmember.getratio(result['name'],name)
+                ratio = clubmember.getratio(result['name'].strip().lower(),name.strip().lower())
                 INACTCSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
             continue
         
@@ -146,7 +146,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,
             if foundmember:
                 name,ascdob = foundmember
                 if CLOSECSV and name.strip().lower() != result['name'].strip().lower():
-                    ratio = clubmember.getratio(result['name'],name)
+                    ratio = clubmember.getratio(result['name'].strip().lower(),name.strip().lower())
                     CLOSECSV.writerow({'results name':result['name'],'results age':result['age'],'database name':name,'database dob':ascdob,'ratio':ratio})
             elif foundinactive:
                 name,ascdob = foundinactive
@@ -467,9 +467,11 @@ def main():
         inactlogname = '{0}-inactive.csv'.format(os.path.splitext(resultfilebase)[0])
         INACT = open(os.path.join(logdir,inactlogname),'wb')
         INACTCSV = csv.DictWriter(INACT,['results name','results age','database name','database dob','ratio'])
+        INACTCSV.writeheader()
         missedlogname = '{0}-missed.csv'.format(os.path.splitext(resultfilebase)[0])
         MISSED = open(os.path.join(logdir,missedlogname),'wb')
         MISSEDCSV = csv.DictWriter(MISSED,['results name','results age','database name','database dob','ratio'])
+        MISSEDCSV.writeheader()
         closelogname = '{0}-close.csv'.format(os.path.splitext(resultfilebase)[0])
         CLOSE = open(os.path.join(logdir,closelogname),'wb')
         CLOSECSV = csv.DictWriter(CLOSE,['results name','results age','database name','database dob','ratio'])
