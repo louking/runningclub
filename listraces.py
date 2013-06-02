@@ -64,7 +64,7 @@ def listraces(session,year=None):
     RESULTLEN = len('results')
     cols = '{0:' + str(IDLEN) + 's} {1:10s} {2:' + str(RACELEN) + 's} {3:' + str(RESULTLEN) + 's} {4:30s}'
     print cols.format('raceid','date','race','results','series')
-    for race in session.query(racedb.Race).order_by(racedb.Race.year,racedb.Race.racenum).filter_by(**filters):
+    for race in session.query(racedb.Race).order_by(racedb.Race.year,racedb.Race.id).filter_by(**filters):
         theseseries = []
 
         if len(race.results) > 0:
