@@ -58,7 +58,7 @@ DEBUG = None
 ag = agegrade.AgeGrade()
 
 #----------------------------------------------------------------------
-def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV): 
+def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV,NONMEMCSV): 
 #----------------------------------------------------------------------
     '''
     collect the data, as directed by series attributes
@@ -74,6 +74,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,
     :param INACTCSV: filehandle to write inactive member log entries, if desired (else None)
     :param MISSEDCSV: filehandle to write log of members which did not match age based on dob in database, if desired (else None)
     :param CLOSECSV: filehandle to write log of members which matched, but not exactly, if desired (else None)
+    :param NONMEMCSV: filehandle to write log of nonmembers which were found, if desired (else None)
     :rtype: number of entries processed
     '''
     
@@ -177,6 +178,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,
             runner = session.query(racedb.Runner).filter_by(name=name,member=False).first()
             runnerid = runner.id
             gender = runner.gender
+            NONMEMCSV.writerow({'results name':result['name'],'results age':result['age'],'new':'N','runner id':runnerid})
             
             try:
                 agegradeage = int(result['age'])
@@ -200,6 +202,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,
             runner = racedb.Runner(name,None,gender,None,member=False)
             added = racedb.insert_or_update(session,racedb.Runner,runner,skipcolumns=['id'],name=runner.name,dateofbirth=None,member=False)
             runnerid = runner.id
+            NONMEMCSV.writerow({'results name':result['name'],'results age':result['age'],'new':'Y','runner id':runnerid})
             
         # may need to write to debug file
         if DEBUG: 
@@ -476,12 +479,16 @@ def main():
         CLOSE = open(os.path.join(logdir,closelogname),'wb')
         CLOSECSV = csv.DictWriter(CLOSE,['results name','results age','database name','database dob','ratio'])
         CLOSECSV.writeheader()
+        nonmemlogname = '{0}-nonmem.csv'.format(os.path.splitext(resultfilebase)[0])
+        NONMEM = open(os.path.join(logdir,nonmemlogname),'wb')
+        NONMEMCSV = csv.DictWriter(NONMEM,['results name','results age','new','runner id'])
+        NONMEMCSV.writeheader()
         
         # for each series - 'series' describes how to tabulate the results
         for series in theseseries:
             # tabulate each race for which there are results, if it hasn't been tabulated before
             print 'tabulating {0}'.format(series.name)
-            numentries = tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV)
+            numentries = tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV,NONMEMCSV)
             print '   {0} entries processed'.format(numentries)
             
             # only collect log entries for the first series
@@ -494,6 +501,9 @@ def main():
             if CLOSECSV:
                 CLOSE.close()
                 CLOSECSV = None
+            if NONMEMCSV:
+                NONMEM.close()
+                NONMEMCSV = None
     
     # and we're through
     session.commit()
