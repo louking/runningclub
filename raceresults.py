@@ -312,8 +312,8 @@ class RaceResults():
                 
             # special processing if name is split, to combine first, last names
             if self.splitnames:
-                first = result.pop('firstname')
-                last = result.pop('lastname')
+                first = result.pop('firstname').strip()
+                last = result.pop('lastname').strip()
                 result['name'] = ' '.join([first,last])
                 
             # look for some obvious errors in name
