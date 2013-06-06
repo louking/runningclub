@@ -88,7 +88,15 @@ def main():
         inactiverunners[thisrunner.name,thisrunner.dateofbirth] = thisrunner
         if OUT:
             OUT.write('found id={0}, runner={1}\n'.format(thisrunner.id,thisrunner))
-    
+            
+    # make report for new members found with this memberfile
+    logdir = os.path.dirname(args.memberfile)
+    memberfilebase = os.path.splitext(os.path.basename(args.memberfile)[0])
+    newmemlogname = '{0}-newmem.csv'.format(memberfilebase)
+    NEWMEM = open(os.path.join(logdir,newmemlogname),'wb')
+    NEWMEMCSV = csv.DictWriter(NEWMEM,['name','dob'])
+    NEWMEMCSV.writeheader()
+        
     # process each name in new membership list
     allmembers = members.getmembers()
     for name in allmembers:
@@ -106,7 +114,10 @@ def main():
                 dbnonmember = racedb.getunique(session,racedb.Runner,member=False,name=thisname)
                 # TODO: there's a slim possibility that there are two nonmembers with the same name, but I'm sure we've already
                 # bolloxed that up in importresult as there's no way to discriminate between the two
-            
+                
+                # make report for new members
+                NEWMEMCSV.writerow({'name':thisname,'dob':thisdob})
+                
             # see if this runner is a member in the database already, or was a member once and make the update
             # add or update runner in database
             # get instance, if it exists, and make any updates
@@ -161,7 +172,8 @@ def main():
         
     session.commit()
     session.close()
-
+    NEWMEM.close()
+    
     if OUT:
         OUT.close()
         
