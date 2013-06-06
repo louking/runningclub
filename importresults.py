@@ -58,7 +58,7 @@ DEBUG = None
 ag = agegrade.AgeGrade()
 
 #----------------------------------------------------------------------
-def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV,NONMEMCSV): 
+def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV,NONMEMCSV): 
 #----------------------------------------------------------------------
     '''
     collect the data, as directed by series attributes
@@ -67,6 +67,7 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,
     :param race: racedb.Race object
     :param resultsfile: file containing results
     :param excluded: list of racers which are to be excluded from results, regardless of member match
+    :param nonmemforced: list of racers which forced to be included as nonmembers, regardless of member match
     :param series: racedb.Series object - describes how to calculate results
     :param active: active members as produced by clubmember.ClubMember()
     :param inactive: inactive members as produced by clubmember.ClubMember()
@@ -120,12 +121,16 @@ def tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,
         
         # some races are for members only
         # for these, don't tabulate unless member found
-        foundmember = active.findmember(result['name'],result['age'],race.date)
-        foundinactive = inactive.findmember(result['name'],result['age'],race.date)
+        # don't look for member if we are forcing this name to be a nonmember
+        foundmember = None
+        foundinactive = None
+        if result['name'] not in nonmemforced:
+            foundmember = active.findmember(result['name'],result['age'],race.date)
+            foundinactive = inactive.findmember(result['name'],result['age'],race.date)
         foundnonmember = nonmember.findname(result['name'])
         
         # log member names found, but which did not match birth date
-        if MISSEDCSV and not foundmember:
+        if MISSEDCSV and result['name'] not in nonmemforced and not foundmember:
             missed = active.getmissedmatches()
             for thismiss in missed:
                 name = thismiss['dbname']
@@ -380,6 +385,7 @@ def main():
     parser.add_argument('raceid',help='id of race (use listraces to determine raceid)',type=int)
     parser.add_argument('-f','--resultsfile',help='file with results information',default=None)
     parser.add_argument('-e','--excludefile',help='file with list of racers to exclude, same format as "close-<resultsfile>.csv"',default=None)
+    parser.add_argument('-n','--nonmemberfile',help='file with list of racers known to be nonmembers, same format as "close-<resultsfile>.csv"',default=None)
     parser.add_argument('-F','--force',help='force action without user prompt',action='store_true')
     parser.add_argument('-d','--delete',help='delete results for this race',action='store_true')
     parser.add_argument('-c','--cutoff',help='cutoff for close match lookup (default %(default)0.2f)',type=float,default=0.7)
@@ -390,6 +396,7 @@ def main():
     raceid = args.raceid
     resultsfile = args.resultsfile
     excludefile = args.excludefile
+    nonmemberfile = args.nonmemberfile
     force = args.force
     
     if args.debug:
@@ -456,7 +463,15 @@ def main():
                 exclc = csv.DictReader(excl)
                 for row in exclc:
                     excluded.append(row['results name'])
-                
+        
+        # get list of excluded racers from excludefile
+        nonmemforced = []
+        if nonmemberfile is not None:
+            with open(nonmemberfile,'rb') as nonm:
+                nonmc = csv.DictReader(nonm)
+                for row in nonmc:
+                    nonmemforced.append(row['results name'])
+        
         # TODO: there's probably a cleaner way to do this filter
         raceseries = session.query(racedb.RaceSeries).filter_by(raceid=raceid,active=True).all()
         seriesids = [s.seriesid for s in raceseries]
@@ -488,7 +503,7 @@ def main():
         for series in theseseries:
             # tabulate each race for which there are results, if it hasn't been tabulated before
             print 'tabulating {0}'.format(series.name)
-            numentries = tabulate(session,race,resultsfile,excluded,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV,NONMEMCSV)
+            numentries = tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV,NONMEMCSV)
             print '   {0} entries processed'.format(numentries)
             
             # only collect log entries for the first series
