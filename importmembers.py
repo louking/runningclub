@@ -41,6 +41,8 @@ Membership spreadsheet must have at least the following columns:
 # standard
 import pdb
 import argparse
+import os.path
+import csv
 
 # pypi
 
@@ -91,7 +93,7 @@ def main():
             
     # make report for new members found with this memberfile
     logdir = os.path.dirname(args.memberfile)
-    memberfilebase = os.path.splitext(os.path.basename(args.memberfile)[0])
+    memberfilebase = os.path.splitext(os.path.basename(args.memberfile))[0]
     newmemlogname = '{0}-newmem.csv'.format(memberfilebase)
     NEWMEM = open(os.path.join(logdir,newmemlogname),'wb')
     NEWMEMCSV = csv.DictWriter(NEWMEM,['name','dob'])
@@ -110,6 +112,10 @@ def main():
 
             # prep for if .. elif below by running some queries
             dbmember = racedb.getunique(session,racedb.Runner,member=True,name=thisname,dateofbirth=thisdob)
+            
+            # TODO: need to handle case where dob transitions from '' to actual date of birth
+            
+            # no member found, maybe there is nonmember of same name already in database
             if dbmember is None:
                 dbnonmember = racedb.getunique(session,racedb.Runner,member=False,name=thisname)
                 # TODO: there's a slim possibility that there are two nonmembers with the same name, but I'm sure we've already
@@ -131,14 +137,21 @@ def main():
             # Check first result for age against age within the input file
             # if ages match, convert nonmember to member
             elif dbnonmember is not None:
+                # get dt for date of birth, if specified
+                try:
+                    dob = tYmd.asc2dt(thisdob)
+                except ValueError:
+                    dob = None
+                    
                 # nonmember came into the database due to a nonmember race result, so we can use any race result to check nonmember's age
-                result = session.query(racedb.RaceResult).filter_by(runnerid=dbnonmember.id).first()
-                resultage = result.agage
-                racedate = tYmd.asc2dt(result.race.date)
-                dob = tYmd.asc2dt(thisdob)
-                expectedage = racedate.year - dob.year - int((racedate.month, racedate.day) < (dob.month, dob.day))
-                # we found the right person
-                if resultage == expectedage:
+                if dob:
+                    result = session.query(racedb.RaceResult).filter_by(runnerid=dbnonmember.id).first()
+                    resultage = result.agage
+                    racedate = tYmd.asc2dt(result.race.date)
+                    expectedage = racedate.year - dob.year - int((racedate.month, racedate.day) < (dob.month, dob.day))
+                
+                # we found the right person, always if dob isn't specified, but preferably check race result for correct age
+                if dob is None or resultage == expectedage:
                     thisrunner = racedb.Runner(thisname,thisdob,thisgender,thishometown)
                     added = racedb.update(session,racedb.Runner,dbnonmember,thisrunner,skipcolumns=['id'])
                     found = True

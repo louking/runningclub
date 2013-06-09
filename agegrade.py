@@ -215,21 +215,31 @@ class AgeGrade():
         
         # extrapolate for ages < 5
         elif age < 5:
-            age1 = 5
-            age2 = 6
-            factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
-            factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
-            factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
-            openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
+            if True:
+                factor,openstd = self.getfactorstd(5,gen,distmeters)
+            
+            # don't do extrapolation
+            else:
+                age1 = 5
+                age2 = 6
+                factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
+                factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
+                factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
+                openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
             
          # extrapolate for ages > 99
         elif age > 99:
-            age1 = 98
-            age2 = 99
-            factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
-            factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
-            factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
-            openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
+            if True:
+                factor,openstd = self.getfactorstd(99,gen,distmeters)
+            
+            # don't do extrapolation
+            else:    
+                age1 = 98
+                age2 = 99
+                factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
+                factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
+                factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
+                openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
         
         # return age grade statistics
         agpercentage = 100*(openstd/factor)/time

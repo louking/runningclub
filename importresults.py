@@ -161,17 +161,30 @@ def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inacti
             runner = session.query(racedb.Runner).filter_by(name=name,dateofbirth=ascdob).first()
             runnerid = runner.id
             gender = runner.gender
-            dob = tYmd.asc2dt(ascdob)
+            
+            try:
+                dob = tYmd.asc2dt(ascdob)
+            except ValueError:
+                dob = None
             
             # set division age (based on age as of Jan 1 for race year)
             # NOTE: the code below assumes that races by divisions are only for members
             # this is because we need to know the runner's age as of Jan 1 for division standings
             racedate = tYmd.asc2dt(race.date)
             divdate = racedate.replace(month=1,day=1)
-            divage = divdate.year - dob.year - int((divdate.month, divdate.day) < (dob.month, dob.day))
+            if dob:
+                divage = divdate.year - dob.year - int((divdate.month, divdate.day) < (dob.month, dob.day))
+            else:
+                divage = None
         
-            # for members, set agegrade age (race date based) 
-            agegradeage = racedate.year - dob.year - int((racedate.month, racedate.day) < (dob.month, dob.day))
+            # for members, set agegrade age (race date based)
+            if dob:
+                agegradeage = racedate.year - dob.year - int((racedate.month, racedate.day) < (dob.month, dob.day))
+            else:
+                try:
+                    agegradeage = int(result['age'])
+                except:
+                    agegradeage = None
         
         # maybe nonmember was found in the database
         # TODO: there may be misspellings in the results file for non-members -- if this occurs, may need to make this more robust
