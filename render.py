@@ -30,6 +30,7 @@ render - common functions for rendering
 # standard
 import pdb
 import argparse
+import math
 
 # pypi
 
@@ -113,7 +114,8 @@ def rendertime(dbtime,precision):
         fracdbtime = dbtime - int(dbtime)
         fracformat = '.{{0:0{0}d}}'.format(precision)
         multiplier = 10**precision
-        frac = int(round(fracdbtime*multiplier))
+        # note round up per USATF rule 165
+        frac = int(math.ceil(fracdbtime*multiplier))
         if frac < multiplier:
             rettime = fracformat.format(frac)
             remdbtime = int(dbtime)
@@ -121,7 +123,8 @@ def rendertime(dbtime,precision):
             rettime = fracformat.format(0)
             remdbtime = int(dbtime+1)
     else:
-        remdbtime = int(round(dbtime))
+        # note round up per USATF rule 165
+        remdbtime = int(math.ceil(dbtime))
     
     thisunit = remdbtime%60
     firstthru = True
