@@ -100,13 +100,14 @@ def renderdate(dbdate):
     return rval
 
 #----------------------------------------------------------------------
-def rendertime(dbtime,precision): 
+def rendertime(dbtime,precision,useceiling=True): 
 #----------------------------------------------------------------------
     '''
     create time for display
     
     :param dbtime: time in seconds
     :param precision: number of places after decimal point
+    :param useceiling: True if ceiling function to be used (round up)
     '''
     
     rettime = ''
@@ -115,7 +116,10 @@ def rendertime(dbtime,precision):
         fracformat = '.{{0:0{0}d}}'.format(precision)
         multiplier = 10**precision
         # note round up per USATF rule 165
-        frac = int(math.ceil(fracdbtime*multiplier))
+        if useceiling:
+            frac = int(math.ceil(fracdbtime*multiplier))
+        else:
+            frac = int(round(fracdbtime*multiplier))
         if frac < multiplier:
             rettime = fracformat.format(frac)
             remdbtime = int(dbtime)
@@ -124,7 +128,10 @@ def rendertime(dbtime,precision):
             remdbtime = int(dbtime+1)
     else:
         # note round up per USATF rule 165
-        remdbtime = int(math.ceil(dbtime))
+        if useceiling:
+            remdbtime = int(math.ceil(dbtime))
+        else:
+            remdbtime = int(round(dbtime))
     
     thisunit = remdbtime%60
     firstthru = True

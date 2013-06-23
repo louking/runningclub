@@ -296,19 +296,25 @@ class RaceResults():
             
             # special processing for age - normalize to integer
             if 'age' in result and result['age'] is not None:
-                try:
-                    result['age'] = int(result['age'])
-                except ValueError:
-                    textfound = False
-                    continue
+                if not result['age']: # 0 or ''
+                    result['age'] = None
+                else:
+                    try:
+                        result['age'] = int(result['age'])
+                    except ValueError:
+                        textfound = False
+                        continue
                 
             # special processing for place - normalize to integer
             if 'place' in result and result['place'] is not None:
-                try:
-                    result['place'] = int(result['place'])
-                except ValueError:
-                    textfound = False
-                    continue
+                if not result['place']:  # 0 or ''
+                    result['place'] = None
+                else:
+                    try:
+                        result['place'] = int(result['place'])
+                    except ValueError:
+                        textfound = False
+                        continue
                 
             # special processing if name is split, to combine first, last names
             if self.splitnames:

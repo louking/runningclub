@@ -373,9 +373,9 @@ def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inacti
                     
                     # detect tie in subsequent results based on rendering,
                     # which rounds to a specific precision based on distance
-                    time = render.rendertime(raceresult.agtime,agtimeprecision)
+                    time = render.rendertime(raceresult.agtime,agtimeprecision,useceiling=False)    # round to nearest 10e-(agtimeprecision)
                     for tiendx in range(rrndx+1,numresults):
-                        if render.rendertime(dbresults[tiendx].agtime,agtimeprecision) != time:
+                        if render.rendertime(dbresults[tiendx].agtime,agtimeprecision,useceiling=False) != time:
                             break
                         tieindeces.append(tiendx)
                     lasttie = tieindeces[-1] + 1
