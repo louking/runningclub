@@ -240,7 +240,9 @@ def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inacti
         # always add age grade to result if we know the age
         # we will decide whether to render, later based on series.calcagegrade, in another script
         if agegradeage:
-            raceresult.agpercent,raceresult.agtime,raceresult.agfactor = ag.agegrade(agegradeage,gender,race.distance,resulttime)
+            timeprecision,agtimeprecision = render.getprecision(race.distance)
+            adjtime = render.adjusttime(resulttime,timeprecision)    # ceiling for adjtime
+            raceresult.agpercent,raceresult.agtime,raceresult.agfactor = ag.agegrade(agegradeage,gender,race.distance,adjtime)
 
         if series.divisions:
             # member's age to determine division is the member's age on Jan 1
@@ -373,9 +375,9 @@ def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inacti
                     
                     # detect tie in subsequent results based on rendering,
                     # which rounds to a specific precision based on distance
-                    time = render.rendertime(raceresult.agtime,agtimeprecision,useceiling=False)    # round to nearest 10e-(agtimeprecision)
+                    time = render.rendertime(raceresult.agtime,agtimeprecision)
                     for tiendx in range(rrndx+1,numresults):
-                        if render.rendertime(dbresults[tiendx].agtime,agtimeprecision,useceiling=False) != time:
+                        if render.rendertime(dbresults[tiendx].agtime,agtimeprecision) != time:
                             break
                         tieindeces.append(tiendx)
                     lasttie = tieindeces[-1] + 1

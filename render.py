@@ -41,9 +41,10 @@ import math
 # home grown
 import version
 import racedb
-DBDATEFMT = racedb.DBDATEFMT
+from config import softwareError
 from loutilities import timeu
 
+DBDATEFMT = racedb.DBDATEFMT
 dbtime = timeu.asctime(DBDATEFMT)
 rndrtim = timeu.asctime('%m/%d/%Y')
 
@@ -62,26 +63,20 @@ def getprecision(distance):
     
     meterspermile = 1609    # close enough, and this is the value used in agegrade.py
     
-    # 200 m plus fudge factor
-    if distance*meterspermile < 250:
-        timeprecision = 2
-        agtimeprecision = 2
-        
-    # 400 m plus fudge factor
-    elif distance*meterspermile < 450:
+    # Anything less than 5K is to 1/10ths of a second.
+    # This assumes all track races are <5K and 5K and above are on roads, and all races are hand timed
+    # This is to approximate USATF rule 165
+    # TODO: modify database to indicate if race is on track or not
+    
+    if distance*meterspermile < 5000:
         timeprecision = 1
         agtimeprecision = 1
-        
-    # include 1 mile - shouldn't be rounding problem so no fudge factor required
-    elif distance <= 1.0:
-        timeprecision = 1
-        agtimeprecision = 1
-        
-    # distances > 1 mile
+
+    # distances > 5K
     else:
         timeprecision = 0
         agtimeprecision = 0
-        
+
     return timeprecision, agtimeprecision
 
 #----------------------------------------------------------------------
@@ -100,6 +95,33 @@ def renderdate(dbdate):
     return rval
 
 #----------------------------------------------------------------------
+def adjusttime(rawtime,precision,useceiling=True): 
+#----------------------------------------------------------------------
+    '''
+    adjust raw time based on precision
+    
+    :param rawtime: time in seconds
+    :param precision: number of places after decimal point
+    :param useceiling: True if ceiling function to be used (round up)
+    
+    :rtype: adjusted time in seconds (float)
+    '''
+    # shift time based on precision
+    multiplier = 10**precision
+
+    # multiply whole time by multiplier to get integral time
+    # then take ceiling or round
+    # then divide by multiplier to get whole and fractional part
+    fixedtime = rawtime * multiplier
+    if useceiling:
+        adjfixedtime = math.ceil(fixedtime)
+    else:
+        adjfixedtime = round(fixedtime)
+    adjtime = adjfixedtime / multiplier
+    
+    return adjtime
+
+#----------------------------------------------------------------------
 def rendertime(dbtime,precision,useceiling=True): 
 #----------------------------------------------------------------------
     '''
@@ -110,12 +132,11 @@ def rendertime(dbtime,precision,useceiling=True):
     :param useceiling: True if ceiling function to be used (round up)
     '''
     
-    rettime = ''
     if precision > 0:
-        fracdbtime = dbtime - int(dbtime)
-        fracformat = '.{{0:0{0}d}}'.format(precision)
+        ''' old code
         multiplier = 10**precision
         # note round up per USATF rule 165
+        fracdbtime = dbtime - int(dbtime)
         if useceiling:
             frac = int(math.ceil(fracdbtime*multiplier))
         else:
@@ -126,12 +147,30 @@ def rendertime(dbtime,precision,useceiling=True):
         else:
             rettime = fracformat.format(0)
             remdbtime = int(dbtime+1)
+        '''
+        
+        # adjust time based on precision
+        adjtime = adjusttime(dbtime,precision,useceiling)
+        
+        # update the rendering what will be returned to include fractional part and what remains
+        wholetime = int(adjtime)
+        fractime = adjtime - wholetime
+        fracformat = '{{0:0.{0}f}}'.format(precision)
+        rettime = fracformat.format(fractime)
+        remdbtime = wholetime
+        
+        # retttime should have leading 0.  remove it
+        if rettime[0] != '0':
+            raise softwareError,'formatted adjusted time fraction does not have leading 0: {0}'.format(adjtime)
+        rettime = rettime[1:]
+        
     else:
         # note round up per USATF rule 165
         if useceiling:
             remdbtime = int(math.ceil(dbtime))
         else:
             remdbtime = int(round(dbtime))
+        rettime = ''
     
     thisunit = remdbtime%60
     firstthru = True

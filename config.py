@@ -45,6 +45,7 @@ from loutilities import extconfigparser
 class accessError(Exception): pass
 class parameterError(Exception): pass
 class dbConsistencyError(Exception): pass
+class softwareError(Exception): pass
 
 # configuration location for running scripts
 CONFIGDIR = appdirs.user_data_dir('runningclub','Lou King')

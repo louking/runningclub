@@ -543,7 +543,7 @@ class TxtRaceHandler(BaseRaceHandler):
         if type(agtime) in [str,unicode]:
             dtime = agtime
         else:
-            dtime = render.rendertime(agtime,self.agtimeprecision)
+            dtime = render.rendertime(agtime,self.agtimeprecision) # round
         self.pline['agtime'] = dtime
     
     #----------------------------------------------------------------------
@@ -612,6 +612,8 @@ class XlRaceHandler(BaseRaceHandler):
     
         # set time styles based on distance
         timeprecision,agtimeprecision = render.getprecision(distance)
+        self.timeprecision = timeprecision
+        self.agtimeprecision = agtimeprecision
         
         if   timeprecision == 1:   self.style['time'] = self.style['time1']
         elif timeprecision == 2:   self.style['time'] = self.style['time2']
@@ -782,6 +784,7 @@ class XlRaceHandler(BaseRaceHandler):
         if type(time) in [str,unicode]:
             xltime = time
         else:
+            time = render.adjusttime(time,self.timeprecision)
             xltime = time / (24*60*60.0)    # convert seconds to days
 
         # maybe override time style
@@ -838,6 +841,7 @@ class XlRaceHandler(BaseRaceHandler):
         if type(agtime) in [str,unicode]:
             xltime = agtime
         else:
+            agtime = render.adjusttime(agtime,self.agtimeprecision)
             xltime = agtime / (24*60*60.0)    # convert seconds to days
 
         # maybe override time style
