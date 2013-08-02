@@ -55,6 +55,7 @@ from loutilities import timeu
 # module globals
 tYmd = timeu.asctime('%Y-%m-%d')
 DEBUG = None
+AGDEBUG = None
 ag = agegrade.AgeGrade()
 
 #----------------------------------------------------------------------
@@ -242,6 +243,8 @@ def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inacti
         if agegradeage:
             timeprecision,agtimeprecision = render.getprecision(race.distance)
             adjtime = render.adjusttime(resulttime,timeprecision)    # ceiling for adjtime
+            if AGDEBUG:
+                AGDEBUG.write('{},{},{},'.format(result['name'],resulttime,adjtime))
             raceresult.agpercent,raceresult.agtime,raceresult.agfactor = ag.agegrade(agegradeage,gender,race.distance,adjtime)
 
         if series.divisions:
@@ -406,6 +409,7 @@ def main():
     parser.add_argument('-c','--cutoff',help='cutoff for close match lookup (default %(default)0.2f)',type=float,default=0.7)
     parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     parser.add_argument('--debug',help='if set, create updateraces.txt for debugging',action='store_true')
+    parser.add_argument('--agdebug',help='if set, create importresults-debug-agegrade.csv containing detailed age grade results',action='store_true')
     args = parser.parse_args()
     
     raceid = args.raceid
@@ -418,6 +422,13 @@ def main():
         global DEBUG
         DEBUG = open('updateresults.txt','w')
         DEBUG.write('name in race,age in race,found,member name,status\n')
+    
+    if args.agdebug:
+        global AGDEBUG
+        AGDEBUG = open('importresults-debug-agegrade.csv','w')
+        AGDEBUG.write('name,resulttime,adjtime,')  # rest of header written in age.AgeGrade.__init__
+        global ag
+        ag = agegrade.AgeGrade(DEBUG=AGDEBUG)
     
     # get active and inactive members, as well as nonmembers
     if args.racedb:
@@ -539,8 +550,9 @@ def main():
     session.commit()
     session.close()
     
-    # done with memberlookup file
+    # done with debug files
     if DEBUG: DEBUG.close()
+    if AGDEBUG: AGDEBUG.close()
         
 # ##########################################################################################
 #	__main__

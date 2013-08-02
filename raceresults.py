@@ -258,6 +258,9 @@ class RaceResults():
         # if float or int, assume it came from excel, and is in days
         elif type(time) in [float,int]:
             tottime = time * (24*60*60.0)
+            
+            # to avoid quantization error through excel, round with epsilon of 0.00005
+            tottime = round(tottime*10000)/10000.0
         
         # it is possible that excel times have been put in as hh:mm accidentally
         # use timefactor to adjust this, based on the time of the first runner, and the distance
@@ -265,10 +268,12 @@ class RaceResults():
         # if time still doesn't fit, ask for help (raise exception)
         if not self.timefactor:
             timeestimate = distance * 6.0 * 60  # 6 minute mile
+            minpace = timeestimate * 0.5
+            maxpace = timeestimate * 2.0
             self.timefactor = 1.0
-            if tottime > timeestimate * 1.5:
+            if tottime > maxpace:
                 self.timefactor = 1/60.0
-            if tottime*self.timefactor < timeestimate * 0.5 or tottime*self.timefactor > timeestimate * 1.5:
+            if tottime*self.timefactor < minpace or tottime*self.timefactor > maxpace:
                 raise parameterError, '{0}: invalid time detected - {1} ({2} secs) for {3} mile race'.format(self.filename,time,tottime,distance)
             
         tottime *= self.timefactor

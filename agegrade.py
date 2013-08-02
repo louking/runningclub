@@ -118,10 +118,16 @@ class AgeGrade():
     configuration is created through command line: agegrade.py [-a agworkbook | -c agconfigfile]
     
     :param agegradewb: excel workbook containing age grade factors
+    :param DEBUG: file handle for debug output
     '''
     #----------------------------------------------------------------------
-    def __init__(self,agegradewb=None):
+    def __init__(self,agegradewb=None,DEBUG=None):
     #----------------------------------------------------------------------
+        self.DEBUG = DEBUG
+        # write header for csv file.  Must match order within self.agegrade if self.DEBUG statement
+        if self.DEBUG:
+            self.DEBUG.write('distmeters,age,gen,openstd,factor,time,agresult,agpercentage\n')
+
         # use age grade workbook if specified
         if agegradewb:
             self.agegradedata = getagtable(agegradewb)
@@ -244,6 +250,9 @@ class AgeGrade():
         # return age grade statistics
         agpercentage = 100*(openstd/factor)/time
         agresult = time*factor
+        if self.DEBUG:
+            # order must match header written in self.__init__
+            self.DEBUG.write('{},{},{},{},{},{},{},{}\n'.format(distmeters,age,gen,openstd,factor,time,agresult,agpercentage))
         return agpercentage,agresult,factor
 
 #----------------------------------------------------------------------

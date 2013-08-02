@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+        <title>Race Results Format Specification</title>
+    </head>
+    
+    <body>
+        
+        <h1>Race Results Format Specification</h1>
+        
+        <small>
+        version 1 (draft 5)
+        <br>July 30, 2013
+        <br><a href="mailto:disciulloj@verizon.net" target="_blank">Jim DiSciullo</a> (HCS)
+        <br><a href="mailto:lking@pobox.com" target="_blank">Lou King</a> (FSRC)
+        </small>
+        
+        <h2>Introduction</h2>
+        
+        This document provides a specification for Race Results Files used to share run race results.  While race results may be provided in a variety of
+        human readable formats, such as PDF, html, text, etc., there is a need to provide these in a format convenient for automated processing.
+        
+        <h2>Scope</h2>
+        
+        This specification supports race result interchange within the Maryland State Road Runners Clubs of America (MD RRCA).  It is encouraged for use for race results
+        anywhere.
+        
+        The format is particularly suited for run race results.  However, it could easily be adapted to bicycle races, or even swimming.
+        
+        <h2>Specification</h2>
+        
+        The specification includes allowable <a href="#filetypes">file types</a>, <a href="#filenaming">file naming</a>
+        and <a href="#filecontents">file contents</a>, as well as information on <a href="#filetransmission">file transmission</a> and where to find the
+        <a href="#filerepository">file repository</a>.
+        
+        <h3 id="filetypes">File Types</h3>
+        
+        The following file types are allowed.
+        
+        <ul>
+            <li>text - text files are files which can be viewed in a text editor as columns of data fields
+                <ul>
+                    <li>columns are defined by the character positions of the heading fields</li>
+                    <li>column first character position is the same as the first character position of the heading field</li>
+                    <li>column last character position is two characters before the first character position of the
+                    <b>next</b> heading field (or at the end of the record for the final column)</li>
+                    <li>note this means that the column heading has to be left justified in the column</li>
+                    <li>tab characters are permitted -- after a tab character the character position is considered to be at the next n*8 character
+                    position boundary, where n is an integer</li>
+                </ul>
+            </li>
+            <li>csv - comma separated value as specified within <a href=http://tools.ietf.org/html/rfc4180 target=_blank>RFC 4180</a>, with
+            exceptions that line breaks are not permitted within fields</li>
+        </ul>
+        
+        <h3 id=filenaming>File Naming</h3>
+        
+        Race Results Files are named as
+        
+        <p style="text-indent: 0.5in">
+            yyyy-mm-dd-dist-name.ext
+        </p> 
+        where:
+        <br>
+        <table style="text-indent: 0.5in">
+            <tr><td>yyyy</td><td>4 digit year</td></tr>
+            <tr><td>mm</td><td>2 digit month, including leading zero if necessary</td></tr>
+            <tr><td>dd</td><td>2 digit date, including leading zero if necessary</td></tr>
+            <tr><td>dist</td><td>numeric race distance followed by <b>M</b> for miles, <b>m</b> for meters, <b>k</b> (or <b>K</b> or <b>km</b>) for kilometers, e.g., 10M, 5km, 400m</td></tr>
+            <tr><td>name</td><td>name of race, free form text, with letters, numbers, spaces, underscores and hyphens permitted</td></tr>
+            <tr><td>ext</td><td><b>txt</b> for text files, <b>csv</b> for csv files</td></tr>
+        </table>
+        
+        <h3 id="filecontents">File Contents</h3>
+        
+        File contents are the file header for the first record, and the race results with a record for each race result.  The fields are aligned
+        as defined in File Types above.  This section defines the permitted heading names, and describes the type of data to be found underneath
+        those headings.
+        <br><br>
+        The headings may be of any case.  For instance, Name and name are equivalent.  Spaces after the headings are not significant, however, as noted
+        above for text files, headings must start in the same character position as the data (i.e., headings must not be centered).
+        <br><br>
+        Alternate Headings are given, separated by commas.  Note the commas are not part of the alternate headings.
+        <br><br>
+        <b>Note: </b>column order is not specified or implied by the order of fields in this table, nor should it be assumed by any automated processing
+        <br><br>        
+        <table style="text-indent: 0.5in">
+            <tr><td><b>Heading</b></td><td><b>Alternate Headings</b></td><td><b>Description</b></td></tr>
+            <tr><td>place</td><td>pl,gunplace</td><td>Overall place of the result within the race.  Note 1st place should be first record, 2nd place second, and so on</td></tr>
+            <tr><td>firstname</td><td>first,first name</td><td>Given name of the participant</td></tr>
+            <tr><td>lastname</td><td>last,last name</td><td>Surname of the participant</td></tr>
+            <tr><td>name</td><td></td><td>Full name of the participant, as Firstname Lastname</td></tr>
+            <tr><td>gender</td><td>g,sex,s,male/female</td><td>Gender of the participant, as M for male or F for female.  Case may be upper or lower</td></tr>
+            <tr><td>age</td><td>ag</td><td>Age in integral years of the participant, on the day of the race</td></tr>
+            <tr><td>city</td><td></td><td>Participant's hometown city, if known</td></tr>
+            <tr><td>st</td><td></td><td>Participant's hometown state, if known -- two character abbreviation for US states or Canadian provinces, or country for other international participants</td></tr>
+            <tr><td>hometown</td><td></td><td>Participants hometown City, ST, if known</td></tr>
+            <tr><td>club</td><td></td><td>MD RRCA club, if known.  See <a href="#abbreviations">MD RRCA Club Abbreviations</a> for acceptable club abbreviations</td></tr>
+            <tr><td>chiptime</td><td></td><td>Net time from crossing of start mat to crossing of finish mat for chip timed races.  See <a href="#timeformat">Time Format</a> for acceptable time formats</td></tr>
+            <tr><td>guntime</td><td>time,actual time</td><td>Gross time from start of race until finish.  See <a href="#timeformat">Time Format</a> for acceptable time formats</td></tr>
+        </table>
+        <br>
+        The following fields are required.  Other fields should be supplied if known.
+        
+        <ul>
+            <li>place</li>
+            <li>firstname</li>
+            <li>lastname</li>
+            <li>gender</li>
+            <li>city</li>
+            <li>st</li>
+            <li>age</li>
+            <li>club</li>
+            <li>guntime</li>
+        </ul>
+        
+        It is permissable to replace <b>firstname</b> and <b>lastname</b> with <b>name</b>.
+        <br><br>
+        It is permissable to replace <b>city</b> and <b>st</b> with <b>hometown</b>.  <b>city</b> and <b>st</b> or <b>hometown</b> must be supplied
+        if known, but if the data isn't available for individual participants, may be left blank for those participants.
+        <br><br>
+        <b>club</b> must be supplied if known, but if the data isn't available for individual participants, may be left blank for those participants.
+        
+        <h4 id="timeformat">Time Format</h4>
+        
+        Time fields should have the precision as defined in
+        <a href=http://www.usatf.org/About/Competition-Rules/2013_Online_Competition_Rules_Book-(1).aspx target=_blank>USATF Competition Rules Book</a>
+        rule 165.
+        
+        Format of time must be as follows.  Fields within square brackets [] are optional.
+        
+        <p style="text-indent: 0.5in">[[hh:]mm:]ss[.ddd]</p>
+        where:
+        <br>
+        <table style="text-indent: 0.5in">
+            <tr><td>hh</td><td>hours, leading 0 optional</td></tr>
+            <tr><td>mm</td><td>minutes, leading 0 optional, unless <b>hh</b> is present, in which case leading 0 is required</td></tr>
+            <tr><td>ss</td><td>seconds, leading 0 optional, unless <b>mm</b> is present, in which case leading 0 is required</td></tr>
+            <tr><td>ddd</td><td>decimal seconds, precision per rule 165</td></tr>
+        </table>
+        
+        <h4 id="abbreviations">MD RRCA Club Abbreviations</h4>
+
+        <table style="text-indent: 0.5in">
+            <tr><td><b>Abbreviation</b></td><td><b>Club</b></td></tr>
+            <tr><td>AS</td><td>Annapolis Striders</td></tr>
+            <tr><td>BRRC</td><td>Baltimore Road Runners Club</td></tr>
+            <tr><td>BFFR</td><td>Best Foot Forward Running</td></tr>
+            <tr><td>BR</td><td>Bullseye Running</td></tr>
+            <tr><td>CCRRRC</td><td>Charm City Run Road Runners Club</td></tr>
+            <tr><td>CBRC</td><td>Chesapeake Bay Running Club</td></tr>
+            <tr><td>DCRRC</td><td>D.C. Road Runners</td></tr>
+            <tr><td>FRR</td><td>Falls Road Running</td></tr>
+            <tr><td>FSRC</td><td>Frederick Steeplechaser Running Club</td></tr>
+            <tr><td>GROC</td><td>Goddard Running and Orienteering Club</td></tr>
+            <tr><td>ir4g</td><td>ir4g Global Runner's Association</td></tr>
+            <tr><td>HCS</td><td>Howard County Striders</td></tr>
+            <tr><td>KIRG</td><td>Kent Island Running Group</td></tr>
+            <tr><td>MCRR</td><td>Montgomery County Road Runners</td></tr>
+            <tr><td>OCRC</td><td>Ocean City Running Club</td></tr>
+            <tr><td>PHDC</td><td>Potomac Highlands Distance Club</td></tr>
+            <tr><td>PGRC</td><td>Prince George's Running Club</td></tr>
+            <tr><td>PNP</td><td>Project New Promise</td></tr>
+            <tr><td>QCS</td><td>Queen City Striders</td></tr>
+            <tr><td>RASAC</td><td>Renaisance All Sports Athletic Club</td></tr>
+            <tr><td>RM</td><td>Running Maryland</td></tr>
+            <tr><td>SCFN</td><td>South County Faith Network</td></tr>
+            <tr><td>SRWCB</td><td>Sowebo Running & Walking Club of Baltimore</td></tr>
+            <tr><td>WCYTC</td><td>Washington County Youth Track Club</td></tr>            
+            <tr><td>WRRC</td><td>Westminster Road Runners Club</td></tr>      
+            <tr><td>N/A</td><td>Not Affiliated with any club</td></tr>      
+            <tr><td>OTH</td><td>Other - affiliated with a club not on the list</td></tr>      
+        </table>
+
+        <h3 id="filetransmission">File Transmission</h3>
+        
+        When race results are available, they should be sent as an attachment to <a href="mailto:maryland@rrca.org", target="_blank">maryland@rrca.org</a>
+        
+        <h3 id="filerepository">File Repository</h3>
+        
+        Race results are stored at and may be downloaded from <a href="http://mdrrca.org/raceresults">http://mdrrca.org/raceresults</a>
+        
+    </body>
+</html>
