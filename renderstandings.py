@@ -392,7 +392,7 @@ class TxtStandingsHandler(BaseStandingsHandler):
         self.TXT[gen].write('\n')                
         numraces = 0
         self.racelist = []
-        for race in self.session.query(racedb.Race).join("series").filter(racedb.RaceSeries.seriesid==series.id).order_by(racedb.Race.racenum).all():
+        for race in self.session.query(racedb.Race).join("series").filter_by(seriesid=series.id,active=True).order_by(racedb.Race.racenum).all():
             self.racelist.append(race.racenum)
             self.TXT[gen].write('\tRace {0}: {1}: {2}\n'.format(race.racenum,race.name,render.renderdate(race.date)))
             numraces += 1
@@ -595,7 +595,7 @@ class XlStandingsHandler(BaseStandingsHandler):
         self.rownum[gen] += 1
 
         self.racelist = []
-        self.races = self.session.query(racedb.Race).join("series").filter(racedb.RaceSeries.seriesid==series.id).order_by(racedb.Race.racenum).all()
+        self.races = self.session.query(racedb.Race).join("series").filter_by(seriesid=series.id,active=True).order_by(racedb.Race.racenum).all()
         numraces = len(self.races)
         nracerows = int(math.ceil(numraces/2.0))
         thiscol = 1
@@ -932,7 +932,7 @@ class StandingsRenderer():
             # pick up active races for this series, in racenum order
             racesprocessed = 0
             racenums = []
-            for race in self.session.query(racedb.Race).filter_by(active=True).join("series").filter_by(seriesid=self.series.id).order_by(racedb.Race.racenum):
+            for race in self.session.query(racedb.Race).filter_by(active=True).join("series").filter_by(seriesid=self.series.id,active=True).order_by(racedb.Race.racenum):
                 # skip races not included in this series (note race.series points at raceseries table)
                 #if self.series.id not in [s.seriesid for s in race.series]: continue
                 self.collectstandings(racesprocessed,gen,race.id,byrunner,divrunner)
