@@ -57,7 +57,7 @@ def getagtable(agegradewb):
     age is age in years (integer)
     factor is age grade factor
     
-    :param agegradewb: excel workbook containing age grade factors
+    :param agegradewb: excel workbook containing age grade factors (e.g., from http://www.howardgrubb.co.uk/athletics/data/wavacalc10.xls)
     
     :rtype: {'F':{dist:{'OC':openstd,age:factor,age:factor,...},...},'M':{dist:{'OC':openstd,age:factor,age:factor,...},...}}
     '''
@@ -90,9 +90,14 @@ def getagtable(agegradewb):
             if r['dist(km)'] == '0.0': continue
             
             dist = int(round(float(r['dist(km)'])*1000))
-            openstd = float(r['OC'])
+
+            # kludge to use only road events -- affects distances 5km and beyond (issue #55)
+            # this works because Howard Grubb's spreadsheet has road first, then track for events which matter
+            # as of wavacalc10.xls, includes 5k, 6k, 4M, 8k, 5M, 10k distances
+            if dist in agegradedata[gen]: continue
             
             # create dist
+            openstd = float(r['OC'])
             agegradedata[gen][dist] = {'OC':openstd}
             
             # add each age factor
