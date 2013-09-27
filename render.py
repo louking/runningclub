@@ -68,11 +68,12 @@ def getprecision(distance):
     # This is to approximate USATF rule 165
     # TODO: modify database to indicate if race is on track or not
     
-    if distance*meterspermile < 5000:
+    road = True
+    if distance*meterspermile < 5000 and not road:
         timeprecision = 1
         agtimeprecision = 1
 
-    # distances > 5K
+    # distances > 5K or road events
     else:
         timeprecision = 0
         agtimeprecision = 0
