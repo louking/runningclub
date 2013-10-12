@@ -181,7 +181,7 @@ def getunique(session, model, **kwargs):
 def update(session, model, oldinstance, newinstance, skipcolumns=[]):
 #----------------------------------------------------------------------
     '''
-    update an existing on based on kwargs query
+    update an existing element based on kwargs query
     
     :param session: session within which update occurs
     :param model: table model
@@ -210,7 +210,7 @@ def update(session, model, oldinstance, newinstance, skipcolumns=[]):
 def insert_or_update(session, model, newinstance, skipcolumns=[], **kwargs):
 #----------------------------------------------------------------------
     '''
-    insert a new element or update an existing on based on kwargs query
+    insert a new element or update an existing element based on kwargs query
     
     :param session: session within which update occurs
     :param model: table model

@@ -1,0 +1,30 @@
+<!doctype html>
+<title>Race Results</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+<div class=heading>
+  <h1>Race Results</h1>
+  <div class=pagename>{% block pagename %}{% endblock %}</div>
+  <div class=metanav>
+  {% if not session.logged_in %}
+    <a href="{{ url_for('login') }}">log in</a>
+  {% else %}
+    {{ session.user_id }}: <a href="{{ url_for('logout') }}">log out</a>
+  {% endif %}
+  </div>  
+</div>
+<div class=wrapper>
+  {% if session.nav %}
+    <ul id="navigation">
+    {% for thisnav in session.nav %}
+       <li><a href={{ thisnav.url }}>{{ thisnav.display }}</a></li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+  <div class=body>
+    {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+    {% block body %}{% endblock %}
+    {% for message in get_flashed_messages() %}
+      <div class=flash>{{ message }}</div>
+    {% endfor %}
+  </div>
+</div>

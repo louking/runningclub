@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block pagename %}
+    Manage Clubs
+{% endblock %}
+{% block body %}
+    {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+    <span class=TextLeft>
+        <form action={{ url_for('newclub') }}>
+            <input type="submit" value="Add Club">
+        </form>
+    </span>
+    <table class=DataList cellpadding=0 cellspace=0>
+        <tr>
+            <th>Abbrev</td>
+            <th>Name</td>
+            <th>Delete</th>
+        </tr>
+    {% for club in clubs %}
+        {% if club.club.shname != 'owner' %}
+        <tr>
+            <td><a href={{ url_for('clubaction',clubname=club.club.shname,action='edit') }}>{{ club.club.shname }} </a></td>
+            <td>{{ club.club.name  }}</td>
+            <td align=center><a href={{ url_for('clubaction',clubname=club.club.shname,action='delete') }}><img class=icon src=static/delete.jpg></a></td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+    </table>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block pagename %}
+    Login
+{% endblock %}
+{% block body %}
+  <form action="{{ url_for('login') }}" method=post>
+    {{ form.hidden_tag() }}
+    <div class="W9emLabel W20emTextBox FloatLeft">
+        <p>
+          {{ form.email.label(class='Label') }}
+          {{ form.email(size=20) }}
+        </p>
+        <p>
+          {{ form.password.label(class='Label') }}
+          {{ form.password(size=20) }}
+        </p>
+        <center><input type=submit align=middle value=Login></center>
+    </div>
+  </form>
+{% endblock %}
