@@ -25,8 +25,10 @@ ForeignKey = db.ForeignKey
 relationship = db.relationship
 backref = db.backref
 
+rolenames = ['admin','viewer']
+
 #----------------------------------------------------------------------
-def init_owner(owner,ownerpw,rolenames=['admin','viewer']):
+def init_owner(owner,ownername,ownerpw):
 #----------------------------------------------------------------------
     '''
     recreate user,role,userrole tables for owner
@@ -34,6 +36,7 @@ def init_owner(owner,ownerpw,rolenames=['admin','viewer']):
     owner gets all roles
     
     :param owner: email address of database owner
+    :param ownername: name of owner
     :param ownerpw: initial password for owner
     :param rolenames: list of names of roles which will be allowed - owner gets all of these. default = {}
     '''.format(rolenames)
@@ -63,7 +66,7 @@ def init_owner(owner,ownerpw,rolenames=['admin','viewer']):
         roles.append(role)
     
     # set up owner user, with appropriate roles
-    user = User(owner,ownerpw)
+    user = User(owner,ownername,ownerpw)
     for role in roles:
         user.roles.append(role)
     db.session.add(user)
@@ -85,24 +88,28 @@ class User(db.Model):
     __tablename__ = 'user'
     id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
     email = Column(String(120), unique=True)
+    name = Column(String(120))
     pw_hash = Column(String(80))  # finding 66 characters on a couple of tests
     active = Column(Boolean)
     authenticated = Column(Boolean)
+    pwresetrequired = Column(Boolean)
     roles = relationship('Role', backref='users', secondary='userrole', cascade="all, delete")
         # many to many pattern - see http://docs.sqlalchemy.org/en/rel_0_8/orm/relationships.html
 
     #----------------------------------------------------------------------
-    def __init__(self,email,password):
+    def __init__(self,email,name,password,pwresetrequired=False):
     #----------------------------------------------------------------------
         self.email = email
+        self.name = name
         self.set_password(password)
         self.active = True
         self.authenticated = False      # not sure how this should be handled
+        self.pwresetrequired = pwresetrequired
         
     #----------------------------------------------------------------------
     def __repr__(self):
     #----------------------------------------------------------------------
-        return '<User %s>' % self.email
+        return '<User %s %s>' % (self.email, self.name)
 
     #----------------------------------------------------------------------
     def set_password(self, password):
@@ -133,7 +140,7 @@ class User(db.Model):
     #----------------------------------------------------------------------
     def get_id(self):
     #----------------------------------------------------------------------
-        return self.email
+        return self.id
     
     #----------------------------------------------------------------------
     def __eq__(self,other):
@@ -196,7 +203,7 @@ class Club(db.Model):
     id = Column(Integer, Sequence('club_id_seq'), primary_key=True)
     shname = Column(String(10), unique=True)
     name = Column(String(40), unique=True)
-    roles = relationship('Role',backref='club')
+    roles = relationship('Role',backref='club',cascade="all, delete")
 
     #----------------------------------------------------------------------
     def __init__(self,shname=None,name=None):

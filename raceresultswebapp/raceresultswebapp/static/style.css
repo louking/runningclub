@@ -23,6 +23,16 @@
   float:top; 
 }
 
+p
+{
+    line-height: 0em;
+    margin: 0 0 1em 0;
+    padding: 0;
+}
+p:last-child
+{
+    margin: 0;
+}
 
 a, h1, h2       { color: #377ba8; }
 h1, h2          { font-family: Georgia, serif; margin: 0; }
@@ -150,16 +160,6 @@ label.Label
     padding: 3px 2px 2px 2px;
     text-align: right;
 }
-p
-{
-    line-height: 1.5em;
-    margin: 0 0 1em 0;
-}
-p:last-child
-{
-    margin: 0;
-}
-
 .W7emLabel label.Label { width: 7em; }
 .W7emLabel .FieldDesc { margin-left: 8em; }
 
@@ -235,6 +235,9 @@ table.DataList td
 }
 table.DataList img.icon
 { height: 1em; vertical-align: middle; text-align: center; }
+
+table.DataList a { display: block; text-decoration:none; }
+
 table.DataList tr:nth-child(odd)
 {
     background-color: #F4F8FF;

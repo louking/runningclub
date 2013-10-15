@@ -53,7 +53,7 @@ def getnavigation(clubid,rolenames):
     
     if 'owner' in rolenames:
         navigation.append({'display':'Manage Clubs','url':flask.url_for('manageclubs')})
-        navigation.append({'display':'Manage Users','url':flask.url_for('ownermanageusers')})
+        navigation.append({'display':'Manage Users','url':flask.url_for('manageusers')})
         
     return navigation
 
@@ -100,13 +100,14 @@ def login():
             flasklogin.login_user(user)
             user.authenticated = True   # else @login_required will fail
             flask.session['logged_in'] = True
+            flask.session['user_name'] = user.name
 
             # Tell Flask-Principal the identity changed
             principal.identity_changed.send(
                 flask.current_app._get_current_object(),
                 identity=principal.Identity(user.id))
             
-            return flask.redirect(flask.request.args.get('next') or flask.url_for('membersonly'))
+            return flask.redirect(flask.request.args.get('next') or flask.url_for('ownerconsole'))
         
         else:
             return flask.render_template('login.html', form=form, error='username or password invalid')
@@ -119,6 +120,9 @@ def login():
 def set_logged_out():
 #----------------------------------------------------------------------
     flasklogin.logout_user()
+    for key in ('logged_in','user_name'):
+        flask.session.pop(key, None)
+        
     flask.session.pop('logged_in', None)
     for key in ('identity.name', 'identity.auth_type'):
         flask.session.pop(key, None)

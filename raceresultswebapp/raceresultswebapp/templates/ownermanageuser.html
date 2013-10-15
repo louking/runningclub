@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block pagename %}
+    {{ thispagename }}
+{% endblock %}
+{% block scripts %}
+    <script type=text/javascript>
+      $(function() {
+        $('#club').on('change', function() {
+          $.getJSON($SCRIPT_ROOT + '/_getpermissions', {
+            clubid: $('#club').val(),
+            userid: hidden_userid.value
+          }, function(data) {
+            $('#admin').prop('checked',data.admin);
+            $('#viewer').prop('checked',data.viewer);
+          });
+          return false;
+        });
+      });
+      function setpermission(checkboxid) {
+        $.getJSON($SCRIPT_ROOT + '/_setpermission', {
+            clubid: $('#club').val(),
+            userid: hidden_userid.value,
+            rolename: checkboxid,
+            setrole: $('#'+checkboxid).prop('checked')
+        });
+        return false;
+      }
+    </script>
+{% endblock %}
+{% block body %}
+  <form action="{{ userurl }}" method=post>
+    {{ form.hidden_tag() }}
+    <div class="W9emLabel W25emTextBox FloatLeft">
+        <p>
+          {{ form.name.label(class='Label') }}
+          {% if not displayonly %}
+            {{ form.name(size=25) }}
+          {% else %}
+            {{ form.name.data }}
+          {% endif %}
+        </p>
+        <p>
+          {{ form.email.label(class='Label') }}
+          {% if not displayonly %}
+            {{ form.email(size=25) }}
+          {% else %}
+            {{ form.email.data }}
+          {% endif %}
+        </p>
+        <p>
+          {{ form.password.label(class='Label') }}
+          {% if not displayonly %}
+            {{ form.password(size=25) }}
+          {% else %}
+            {{ form.password.data }}
+          {% endif %}
+        </p>
+        {% if not displayonly %}
+            <p>{{ form.owner.label(class='Label') }} {{ form.owner }}</p>
+            {% if not newuser %}
+                <p>{{ form.club.label(class='Label') }} {{ form.club }}</p>
+                <p>{{ form.admin.label(class='Label') }} {{ form.admin(onClick='setpermission("admin")') }}</p>
+                <p>{{ form.viewer.label(class='Label') }} {{ form.viewer(onClick='setpermission("viewer")') }}</p>
+            {% endif %}
+        {% endif %}
+        <center>
+            <input type=submit name=whichbutton value=Cancel />
+            {% if action %}
+                <input type=submit name=whichbutton value={{action}} >
+            {% endif %}
+        </center>
+  </form>
+{% endblock %}

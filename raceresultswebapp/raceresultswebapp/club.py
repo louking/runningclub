@@ -38,7 +38,7 @@ from raceresultswebapp.login import getnavigation
 db = authmodel.db
 
 # module specific needs
-from authmodel import Club
+from authmodel import Club, Role
 
 ########################################################################
 class OwnerClubForm(flaskwtf.Form):
@@ -57,58 +57,40 @@ def manageclubs():
     clubs = []
     for club in Club.query.all():
         if club.shname == 'owner': continue # not really a club -- TODO: IS THIS Club entry NEEDED?
-                                            # if remove it from club, will that cause an issue in the role table?
-        # TODO: get rid of club.cluburl, change club.club to club -- here and in manageclubs.html
-        #clubs.append({'club':club,'cluburl':flask.url_for('ownermanageclub',clubname=club.shname)})
-        clubs.append({'club':club})
+                                            # if remove owner from club table, will that cause an issue in the role table?
+        clubs.append(club)
 
     return flask.render_template('manageclubs.html',clubs=clubs)
-
-## TODO: combine this with clubaction (clubname,'edit')
-##----------------------------------------------------------------------
-#@app.route('/ownermanageclub/<clubname>', methods=['GET', 'POST'])
-#@owner_permission.require()
-#def ownermanageclub(clubname):
-##----------------------------------------------------------------------
-#    # get the data from the database
-#    thisclub = authmodel.Club.query.filter_by(shname=clubname).first()
-#
-#    # define form for GET
-#    if flask.request.method == "GET":
-#        form = OwnerClubForm(shname=thisclub.shname, name=thisclub.name)
-#    
-#    # validate form input
-#    elif flask.request.method == "POST":
-#        form = OwnerClubForm()  # flask-wtf reads from request object
-#        if form.validate_on_submit():
-#            thisclub.shname = form.shname.data
-#            thisclub.name = form.name.data
-#            db.session.commit()
-#            flask.get_flashed_messages()    # clears flash queue
-#            return flask.redirect(flask.url_for('manageclubs'))
-#    
-#    return flask.render_template('ownermanageclub.html', form=form,
-#                                 cluburl=flask.url_for('ownermanageclub',clubname=clubname),
-#                                 thispagename='Manage Club', action='Update')
 
 #----------------------------------------------------------------------
 @app.route('/newclub', methods=['GET', 'POST'])
 @owner_permission.require()
 def newclub():
 #----------------------------------------------------------------------
-    # define form for GET
+    # create form
+    form = OwnerClubForm()
+
+    # nothing to do on GET so far
     if flask.request.method == "GET":
-        form = OwnerClubForm()
+        pass
     
     # validate form input
     elif flask.request.method == "POST":
-        form = OwnerClubForm()  # flask-wtf reads from request object
         if form.validate_on_submit():
             thisclub = Club()
             thisclub.shname = form.shname.data
             thisclub.name = form.name.data
+            
+            # add club
             db.session.add(thisclub)
+            
+            # add roles to club
+            for rolename in authmodel.rolenames:
+                role = Role(rolename)
+                thisclub.roles.append(role)
+            
             db.session.commit()
+            
             flask.get_flashed_messages()    # clears flash queue
             return flask.redirect(flask.url_for('manageclubs'))
     
@@ -129,24 +111,28 @@ def clubaction(clubname,action):
     thisclub = authmodel.Club.query.filter_by(shname=clubname).first()
 
     if action == 'delete':
+        pagename = 'Delete Club'
         buttontext = 'Delete'
         flask.flash('Confirm delete by pressing Delete button')
         successtext = '{} deleted'.format(thisclub.shname)
         displayonly = True
     elif action == 'edit':
+        pagename = 'Edit Club'
         buttontext = 'Update'
         successtext = '{} updated'.format(thisclub.shname)
         displayonly = False
     else:
         flask.abort(404)
 
-    # define form for GET
+    # create form
+    form = OwnerClubForm(shname=thisclub.shname, name=thisclub.name)
+
+    # nothing to do on GET so far
     if flask.request.method == "GET":
-        form = OwnerClubForm(shname=thisclub.shname, name=thisclub.name)
+        pass
     
     # validate form input
     elif flask.request.method == "POST":
-        form = OwnerClubForm()  # flask-wtf reads from request object
         if form.validate_on_submit():
             flask.get_flashed_messages()    # clears flash queue
             if action == 'delete':
@@ -160,5 +146,5 @@ def clubaction(clubname,action):
     return flask.render_template('ownermanageclub.html', form=form,
                                  cluburl=flask.url_for('clubaction',clubname=clubname,action=action),
                                  displayonly=displayonly,
-                                 thispagename='Delete Club', action=buttontext)
+                                 thispagename=pagename, action=buttontext)
 

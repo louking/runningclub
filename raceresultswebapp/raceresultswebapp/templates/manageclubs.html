@@ -16,11 +16,11 @@
             <th>Delete</th>
         </tr>
     {% for club in clubs %}
-        {% if club.club.shname != 'owner' %}
+        {% if club.shname != 'owner' %}
         <tr>
-            <td><a href={{ url_for('clubaction',clubname=club.club.shname,action='edit') }}>{{ club.club.shname }} </a></td>
-            <td>{{ club.club.name  }}</td>
-            <td align=center><a href={{ url_for('clubaction',clubname=club.club.shname,action='delete') }}><img class=icon src=static/delete.jpg></a></td>
+            <td><a href={{ url_for('clubaction',clubname=club.shname,action='edit') }}>{{ club.shname }}</a></td>
+            <td><a href={{ url_for('clubaction',clubname=club.shname,action='edit') }}>{{ club.name  }}</a></td>
+            <td align=center><a href={{ url_for('clubaction',clubname=club.shname,action='delete') }}><img class=icon src={{url_for('static',filename='delete.jpg')}}></a></td>
         </tr>
         {% endif %}
     {% endfor %}

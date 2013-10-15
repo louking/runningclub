@@ -1,6 +1,15 @@
 <!doctype html>
 <title>Race Results</title>
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script>
+  window.jQuery || document.write('<script src="{{
+  url_for('static', filename='jquery-1.10.2.min.js') }}">\3C/script>')</script>
+<script type=text/javascript>
+  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+{% block scripts %}
+{% endblock %}
 <div class=heading>
   <h1>Race Results</h1>
   <div class=pagename>{% block pagename %}{% endblock %}</div>
@@ -8,7 +17,7 @@
   {% if not session.logged_in %}
     <a href="{{ url_for('login') }}">log in</a>
   {% else %}
-    {{ session.user_id }}: <a href="{{ url_for('logout') }}">log out</a>
+    {{ session.user_name }}: <a href="{{ url_for('logout') }}">log out</a>
   {% endif %}
   </div>  
 </div>

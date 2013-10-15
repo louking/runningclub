@@ -54,6 +54,7 @@ db = authmodel.db
 # import all views
 import raceresultswebapp.login
 import raceresultswebapp.club
+import raceresultswebapp.userrole
 
 # permissions
 from raceresultswebapp.login import owner_permission, ClubDataNeed, UpdateClubDataNeed, ViewClubDataNeed, \
@@ -89,11 +90,11 @@ def ownermanageusers():
 ########################################################################
 ########################################################################
 #----------------------------------------------------------------------
-@app.route('/membersonly')
+@app.route('/ownerconsole')
 @flasklogin.login_required
-def membersonly():
+def ownerconsole():
 #----------------------------------------------------------------------
-    return flask.render_template('members.html')
+    return flask.render_template('ownerconsole.html')
 
 #----------------------------------------------------------------------
 # main processing - run application
