@@ -3,8 +3,8 @@
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>
-  window.jQuery || document.write('<script src="{{
-  url_for('static', filename='jquery-1.10.2.min.js') }}">\3C/script>')</script>
+  window.jQuery || document.write('<script src="{{ url_for('static', filename='jquery-1.10.2.min.js') }}">\3C/script>')
+</script>
 <script type=text/javascript>
   var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 </script>
@@ -14,11 +14,15 @@
   <h1>Race Results</h1>
   <div class=pagename>{% block pagename %}{% endblock %}</div>
   <div class=metanav>
-  {% if not session.logged_in %}
-    <a href="{{ url_for('login') }}">log in</a>
-  {% else %}
-    {{ session.user_name }}: <a href="{{ url_for('logout') }}">log out</a>
-  {% endif %}
+    {% if not session.logged_in %}
+      <a href="{{ url_for('login') }}">log in</a>
+    {% else %}
+      {{ session.user_name }}
+      {% if session.club_name %}
+        | <a href="{{url_for('setclub')}}?{{ {'next':request.base_url }|urlencode }}">{{ session.club_name }}</a>
+      {% endif %}
+      | <a href="{{ url_for('logout') }}">log out</a>
+    {% endif %}
   </div>  
 </div>
 <div class=wrapper>

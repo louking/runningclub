@@ -1,6 +1,6 @@
-{% macro render_field(field) %}
+{% macro render_field(field,displayonly) %}
   <p>
-    {{ field.label(class=Label) }}
+    {{ field.label(class='Label') }}
     {% if not displayonly %}
       {{ field(**kwargs)|safe }}
     {% else %}

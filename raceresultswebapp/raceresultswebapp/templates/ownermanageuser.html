@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from '_formhelpers.html' import render_field %}
 {% block pagename %}
     {{ thispagename }}
 {% endblock %}
@@ -31,43 +32,24 @@
   <form action="{{ userurl }}" method=post>
     {{ form.hidden_tag() }}
     <div class="W9emLabel W25emTextBox FloatLeft">
-        <p>
-          {{ form.name.label(class='Label') }}
-          {% if not displayonly %}
-            {{ form.name(size=25) }}
-          {% else %}
-            {{ form.name.data }}
-          {% endif %}
-        </p>
-        <p>
-          {{ form.email.label(class='Label') }}
-          {% if not displayonly %}
-            {{ form.email(size=25) }}
-          {% else %}
-            {{ form.email.data }}
-          {% endif %}
-        </p>
-        <p>
-          {{ form.password.label(class='Label') }}
-          {% if not displayonly %}
-            {{ form.password(size=25) }}
-          {% else %}
-            {{ form.password.data }}
-          {% endif %}
-        </p>
+        {{ render_field(form.name,displayonly,size=25) }}
+        {{ render_field(form.email,displayonly,size=25) }}
         {% if not displayonly %}
-            <p>{{ form.owner.label(class='Label') }} {{ form.owner }}</p>
+            {{ render_field(form.password,size=25) }}
+            {{ render_field(form.owner) }}
             {% if not newuser %}
-                <p>{{ form.club.label(class='Label') }} {{ form.club }}</p>
-                <p>{{ form.admin.label(class='Label') }} {{ form.admin(onClick='setpermission("admin")') }}</p>
-                <p>{{ form.viewer.label(class='Label') }} {{ form.viewer(onClick='setpermission("viewer")') }}</p>
+                {{ render_field(form.club) }}
+                {{ render_field(form.admin,onClick='setpermission("admin")') }}
+                {{ render_field(form.viewer,onClick='setpermission("viewer")') }}
             {% endif %}
         {% endif %}
         <center>
+        {% if cancancel %}
             <input type=submit name=whichbutton value=Cancel />
-            {% if action %}
-                <input type=submit name=whichbutton value={{action}} >
-            {% endif %}
+        {% endif %}
+        {% if action %}
+            <input type=submit name=whichbutton value="{{action}}" >
+        {% endif %}
         </center>
   </form>
 {% endblock %}

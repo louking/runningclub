@@ -59,12 +59,12 @@ import raceresultswebapp.userrole
 # permissions
 from raceresultswebapp.login import owner_permission, ClubDataNeed, UpdateClubDataNeed, ViewClubDataNeed, \
                                     UpdateClubDataPermission, ViewClubDataPermission
-from raceresultswebapp.login import getnavigation
+from raceresultswebapp.login import setnavigation
             
-#@app.before_request
-#def before_request():
-#    flask.g.db = authmodel.db
-#
+@app.before_request
+def before_request():
+    setnavigation()
+
 #@app.teardown_request
 #def teardown_request(exception):
 #    db = getattr(flask.g, 'db', None)
@@ -78,14 +78,6 @@ from raceresultswebapp.login import getnavigation
 def index():
 #----------------------------------------------------------------------
     return flask.render_template('index.html')
-
-########################################################################
-########################################################################
-#----------------------------------------------------------------------
-@app.route('/manageusers')
-def ownermanageusers():
-#----------------------------------------------------------------------
-    return flask.render_template('ownermanageusers.html')
 
 ########################################################################
 ########################################################################

@@ -64,14 +64,16 @@ class RaceResults():
     
     :params filename: filename from which race results are to be retrieved
     :params distance: distance for race (miles)
+    :params timereqd: default True, set to False if just looking at registration list
     '''
     #----------------------------------------------------------------------
-    def __init__(self,filename,distance):
+    def __init__(self,filename,distance,timereqd=True):
     #----------------------------------------------------------------------
         # open the textreader using the file
         self.file = textreader.TextReader(filename)
         self.filename = filename
         self.distance = distance
+        self.timereqd = timereqd
         
         # timefactor is based on the first entry's time and distance
         # see self._normalizetime()
@@ -93,8 +95,10 @@ class RaceResults():
         foundhdr = False
         delimited = self.file.getdelimited()
         fields = fieldxform.keys()
-        MINMATCHES = 4
-        REQDFIELDS = ['time','gender','age']    # 'name' fields handled separately
+        REQDFIELDS = ['gender','age']    # 'name' fields handled separately
+        if self.timereqd:
+            REQDFIELDS.append('time')
+        MINMATCHES = len(REQDFIELDS) + 1    # add one for 'name'
 
         # catch StopIteration, which means header wasn't found in the file
         try:
@@ -335,7 +339,8 @@ class RaceResults():
             # TODO: add normalization for gender
             
             # add normalization for race time (e.g., convert hours to minutes if misuse of excel)
-            result['time'] = self._normalizetime(result['time'],self.distance)
+            if 'time' in result:
+                result['time'] = self._normalizetime(result['time'],self.distance)
         
         # and return result
         return result

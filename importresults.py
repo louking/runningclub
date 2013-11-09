@@ -490,7 +490,7 @@ def main():
                 for row in exclc:
                     excluded.append(row['results name'])
         
-        # get list of excluded racers from excludefile
+        # get list of forced inclusions from nonmemberfile
         nonmemforced = []
         if nonmemberfile is not None:
             with open(nonmemberfile,'rb') as nonm:

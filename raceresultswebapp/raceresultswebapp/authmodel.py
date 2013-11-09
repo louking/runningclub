@@ -5,12 +5,12 @@ from werkzeug.security import generate_password_hash, \
 
 app = Flask(__name__)
 
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\temp\\test.db'
 dbuser = 'testuser'
 password = 'testuserpw'
 dbserver = '127.0.0.1'
 dbname = 'testdemo'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{uname}:{pw}@{server}/{dbname}'.format(uname=dbuser,pw=password,server=dbserver,dbname=dbname)
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 7200  # fix "MySQL server has gone away" error
 
 db = SQLAlchemy(app)
 Table = db.Table
@@ -93,7 +93,9 @@ class User(db.Model):
     active = Column(Boolean)
     authenticated = Column(Boolean)
     pwresetrequired = Column(Boolean)
-    roles = relationship('Role', backref='users', secondary='userrole', cascade="all, delete")
+    #roles = relationship('userrole', backref='users', cascade="all, delete")
+    #roles = relationship('Role', backref='users', secondary='userrole', cascade="all, delete")
+    roles = relationship('Role', backref='users', secondary='userrole')
         # many to many pattern - see http://docs.sqlalchemy.org/en/rel_0_8/orm/relationships.html
 
     #----------------------------------------------------------------------

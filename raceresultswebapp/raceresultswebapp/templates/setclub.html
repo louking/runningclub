@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% from '_formhelpers.html' import render_field %}
+{% block pagename %}
+    {{ pagename }}
+{% endblock %}
+{% block body %}
+  <form action="{{ thisurl }}" method=post>
+    {{ form.hidden_tag() }}
+    <div class="W9emLabel W25emTextBox FloatLeft">
+      {{ render_field(form.club) }}
+      <center>
+          {% if action %}
+              <input type=submit name=whichbutton value="{{action}}" >
+          {% endif %}
+      </center>
+  </form>
+{% endblock %}

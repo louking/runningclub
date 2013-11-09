@@ -34,28 +34,72 @@ import wtforms
 
 # home grown
 from raceresultswebapp import app, authmodel
+from authmodel import User,Club
 
 login_manager = flasklogin.LoginManager(app)
 
 #----------------------------------------------------------------------
-def getnavigation(clubid,rolenames):
+def getnavigation():
 #----------------------------------------------------------------------
     '''
     retrieve navigation list, based on current club and user's roles
     
-    :param clubid: club id
     :param rolenames: list of role names
     :rettype: list of dicts {'display':navdisplay,'url':navurl}
     '''
+    thisuser = flasklogin.current_user
+    
+    club = None
+    if hasattr(flask.session,'club_id'):
+        club = Club.query.filter_by(id=flask.session.club_id).first()
+        
     navigation = []
     
     navigation.append({'display':'Home','url':flask.url_for('index')})
     
-    if 'owner' in rolenames:
-        navigation.append({'display':'Manage Clubs','url':flask.url_for('manageclubs')})
-        navigation.append({'display':'Manage Users','url':flask.url_for('manageusers')})
+    if thisuser.is_authenticated():
+        rolenames = ['owner','admin','viewer']
+        if 'owner' in rolenames:
+            navigation.append({'display':'Manage Clubs','url':flask.url_for('manageclubs')})
+            navigation.append({'display':'Manage Users','url':flask.url_for('manageusers')})
         
     return navigation
+
+#----------------------------------------------------------------------
+def _getuserclubs(user):
+#----------------------------------------------------------------------
+    '''
+    get clubs user has permissions for
+    
+    :param user: User record
+    :rtype: [(club.id,club.name),...], not including 'owner' club, for select, sorted by club.name
+    '''
+    clubs = []
+    for role in user.roles:
+        thisclub = Club.query.filter_by(id=role.club_id).first()
+        if thisclub.name == 'owner': continue
+        clubselect = (thisclub.id,thisclub.name)
+        if clubselect not in clubs:
+            clubs.append(clubselect)
+    decclubs = [(club[1],club) for club in clubs]
+    decclubs.sort()
+    return [club[1] for club in decclubs]
+
+#----------------------------------------------------------------------
+def setnavigation():
+#----------------------------------------------------------------------
+    '''
+    set navigation based on user, club
+    '''
+    thisuser = flasklogin.current_user
+
+    club = None
+    if hasattr(flask.session,'club'):
+        club = flask.session.club
+        
+    # get navigation list
+    # TODO: get actual data from user's roles
+    flask.session['nav'] = getnavigation()
 
 ########################################################################
 ########################################################################
@@ -87,15 +131,17 @@ def login():
     # define form
     form = LoginForm()
 
-    # Validate form input
-    if form.validate_on_submit():
+    # Validate form input for POST
+    if flask.request.method == "POST" and form.validate_on_submit():
         # Retrieve the user from the datastore
         user = authmodel.find_user(form.email.data)
-        if user == None:
+
+        # flag user doesn't exist or incorrect password
+        if not (user and user.check_password(form.password.data)):
             return flask.render_template('login.html', form=form, error='username or password invalid')
 
-        # Compare passwords (use password hashing production)
-        if user.check_password(form.password.data):
+        # we're good
+        else:
             # Keep the user info in the session using Flask-Login
             flasklogin.login_user(user)
             user.authenticated = True   # else @login_required will fail
@@ -107,11 +153,23 @@ def login():
                 flask.current_app._get_current_object(),
                 identity=principal.Identity(user.id))
             
-            return flask.redirect(flask.request.args.get('next') or flask.url_for('ownerconsole'))
-        
-        else:
-            return flask.render_template('login.html', form=form, error='username or password invalid')
-
+            userclubs = _getuserclubs(user)
+            
+            # zero clubs is an internal error in the databse
+            if not(userclubs):
+                abort(500)  # Internal Server Error
+                
+            # if the user only has access to one club, we're done
+            if len(userclubs) == 1:
+                club = Club.query.filter_by(id=userclubs[0][0]).first()
+                flask.session['club_id'] = club.id
+                flask.session['club_name'] = club.name
+                return flask.redirect(flask.request.args.get('next') or flask.url_for('ownerconsole'))
+            
+            # otherwise, get the club from the user
+            else:
+                return flask.redirect('setclub')
+            
     return flask.render_template('login.html', form=form)
 
 ########################################################################
@@ -120,7 +178,7 @@ def login():
 def set_logged_out():
 #----------------------------------------------------------------------
     flasklogin.logout_user()
-    for key in ('logged_in','user_name'):
+    for key in ('logged_in','user_name','club_id','club_name'):
         flask.session.pop(key, None)
         
     flask.session.pop('logged_in', None)
@@ -135,19 +193,43 @@ def logout():
     user = authmodel.find_user(flask.session['user_id'])
     user.authenticated = False
     set_logged_out()
-    #flasklogin.logout_user()
-    #flask.session.pop('logged_in', None)
-    #flask.session.pop('nav', None)
-    #        
-    ## Remove session keys set by Flask-Principal
-    #for key in ('identity.name', 'identity.auth_type'):
-    #    flask.session.pop(key, None)
 
     # Tell Flask-Principal the user is anonymous
     principal.identity_changed.send(flask.current_app._get_current_object(),
                           identity=principal.AnonymousIdentity())
 
     return flask.redirect(flask.request.args.get('next') or flask.url_for('index'))
+
+########################################################################
+class ClubForm(flaskwtf.Form):
+########################################################################
+    club = wtforms.SelectField('Club',coerce=int)
+
+#----------------------------------------------------------------------
+@app.route('/setclub', methods=['GET', 'POST'])
+@flasklogin.login_required
+def setclub():
+#----------------------------------------------------------------------
+    # find session's user
+    thisuser = flasklogin.current_user
+
+    # define form
+    form = ClubForm()
+    form.club.choices = _getuserclubs(thisuser)
+
+    # Validate form input for POST
+    if flask.request.method == "POST" and form.validate_on_submit():
+        # Retrieve the club picked by the user
+        thisclubid = form.club.data
+        club = Club.query.filter_by(id=thisclubid).first()
+        flask.session['club_id'] = club.id
+        flask.session['club_name'] = club.name
+        
+        # TODO: need to change this to clubconsole
+        return flask.redirect(flask.request.args.get('next') or flask.url_for('ownerconsole'))
+        
+    return flask.render_template('setclub.html', form=form, pagename='Set Club', action='Set Club')
+
 
 ########################################################################
 # permissions definition
@@ -198,15 +280,6 @@ def on_identity_loaded(sender, identity):
             elif role.name == 'owner':
                 identity.provides.add(principal.RoleNeed('owner'))
                 for club in authmodel.Club.query.all():
-                    if club == 'owner': continue
+                    if club.name == 'owner': continue
                     identity.provides.add(ViewClubDataNeed(club.id))
                     identity.provides.add(UpdateClubDataNeed(club.id))
-                
-    # get navigation list - should this be in on_identity_changed ?
-    # TODO: get actual data from user's roles 
-    if current_user.is_authenticated():
-        nav = getnavigation(1,['owner','admin','viewer'])
-    else:
-        nav = getnavigation(0,[])
-    flask.session['nav'] = nav
-            

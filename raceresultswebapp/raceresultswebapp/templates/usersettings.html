@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% from '_formhelpers.html' import render_field %}
+{% block pagename %}
+    {{ thispagename }}
+{% endblock %}
+{% block body %}
+  <form action="{{ userurl }}" method=post>
+    {{ form.hidden_tag() }}
+    <div class="W9emLabel W25emTextBox FloatLeft">
+        {{ render_field(form.name,displayonly,size=25) }}
+        {{ render_field(form.email,displayonly,size=25) }}
+        {% if not displayonly %}
+            {{ render_field(form.password,size=25) }}
+        {% endif %}
+        <center>
+            <input type=submit name=whichbutton value=Cancel />
+            {% if action %}
+                <input type=submit name=whichbutton value="{{action}}" >
+            {% endif %}
+        </center>
+  </form>
+{% endblock %}
