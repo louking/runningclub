@@ -212,10 +212,10 @@ class AgeGrade():
         else:
             distmeters = distmiles*mpermile
         
-        # check distance within range
+        # check distance within range.  Make min and max float so exception format specification works
         distlist = self.agegradedata[gen].keys()
-        minmeters = min(distlist)
-        maxmeters = max(distlist)
+        minmeters = min(distlist)*1.0
+        maxmeters = max(distlist)*1.0
         if distmeters < minmeters or distmeters > maxmeters:
             raise parameterError, 'distmiles must be between {0:f0.3} and {1:f0.1}'.format(minmeters/mpermile,maxmeters/mpermile)
 

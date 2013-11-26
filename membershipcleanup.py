@@ -171,9 +171,10 @@ def main():
 
         # TODO: REMOVE THIS -- for testing only, update email address
         if not notedemail:
-            print '***NOTE: making all email addresses into lking@pobox.com'
             notedemail = True
-        outmember['Email'] = 'lking@pobox.com'
+            print '***NOTE: using real email addresses'
+        #    print '***NOTE: making all email addresses into lking@pobox.com'
+        #outmember['Email'] = 'lking@pobox.com'
         
         # save this member
         members[address].append(outmember)
