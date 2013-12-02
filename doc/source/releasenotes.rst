@@ -14,6 +14,17 @@ Running Club Installation
 
 See :doc:`installation`
 
+runningclub 1.4.1
+-----------------
+
+* add exportresults to setup.py
+
+runningclub 1.4.0
+-----------------
+
+* add exportresults
+* initial changes for racedb web app - login stuff mostly
+
 runningclub 0.1
 -----------------
 

@@ -42,6 +42,7 @@ setup(
 #    include_package_data = True,
     scripts = [
         'runningclub/agegrade.py',
+        'runningclub/exportresults.py',
         'runningclub/importmembers.py',
         'runningclub/importraces.py',
         'runningclub/importresults.py',
@@ -74,6 +75,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'agegrade = runningclub.agegrade:main',
+            'exportresults = runningclub.exportresults:main',
             'importmembers = runningclub.importmembers:main',
             'importraces = runningclub.importraces:main',
             'importresults = runningclub.importresults:main',
