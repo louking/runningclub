@@ -34,6 +34,7 @@ import difflib
 import csv
 
 # pypi
+#from IPython.core.debugger import Tracer; debughere = Tracer(); debughere() # set breakpoint where needed
 
 # github
 
@@ -76,13 +77,14 @@ class ClubMember():
     :params cutoff: cutoff for getmember.  float in (0,1].  higher means strings have to match more closely to be considered "close".  Default 0.6
     '''
     #----------------------------------------------------------------------
-    def __init__(self,csvfile,cutoff=0.6):
+    def __init__(self,csvfile,cutoff=0.6,exceldates=True):
     #----------------------------------------------------------------------
         _IN = open(csvfile,'rb')
         IN = csv.DictReader(_IN)
         
         # collect member information by member name
         self.members = {}
+        self.exceldates = exceldates
         
         # set getmember cutoff.  This is a float within (0,1]
         # higher means strings have to match more closely to be considered "close"
@@ -90,14 +92,18 @@ class ClubMember():
         
         # read each row in input file, and create the member data structure
         for thisrow in IN:
-            name = ' '.join([thisrow['First'],thisrow['Last']])
+            # allow First or GivenName; allow Last or FamilyName; throw error for First, Last keys
+            first = thisrow['GivenName']  if 'GivenName' in thisrow  else thisrow['First']
+            last  = thisrow['FamilyName'] if 'FamilyName' in thisrow else thisrow['Last']
+            first = first.strip()
+            last = last.strip()
+            
+            name = ' '.join([first,last])
             thismember = {}
             thismember['name'] = name.strip()
             if thismember['name'] == '': break   # assume first blank 'name' is the end of the data
-            try:
-                dob = tYmd.dt2asc(timeu.excel2dt(thisrow['DOB']))
-            except ValueError:   # handle invalid dates
-                dob = ''
+
+            dob = self.file2ascdate(thisrow['DOB'])
             thismember['dob'] = dob
             thismember['gender'] = thisrow['Gender'].upper().strip()
             thismember['hometown'] = ', '.join([thisrow['City'].strip(),thisrow['State'].strip()])
@@ -109,6 +115,28 @@ class ClubMember():
                 self.members[lowername] = []
             self.members[lowername].append(thismember)    # allows for possibility that multiple members have same name
     
+    #----------------------------------------------------------------------
+    def file2ascdate(self,date):
+    #----------------------------------------------------------------------
+        '''
+        returns yyyy-mm-dd ascii date
+        
+        :param date: date from file
+        :rtype: yyyy-mm-dd ascii date, or '' if invalid date
+        '''
+
+        if self.exceldates:
+            try:
+                dob = tYmd.dt2asc(timeu.excel2dt(date))
+            except ValueError:   # handle invalid dates
+                dob = ''
+                
+        else:
+            dob = date
+            
+        return dob
+        
+
     #----------------------------------------------------------------------
     def getmembers(self):
     #----------------------------------------------------------------------
@@ -188,7 +216,7 @@ class ClubMember():
                     else:
                         self.missedmatches.append({'name':name,'asofdate':asofdate,'age':age,
                                                    'dbname':member['name'],'dob':member['dob'],
-                                                   'ratio':getratio(name,member['name'])})
+                                                   'ratio':getratio(name.strip().lower(),member['name'].strip().lower())})
                 # invalid dob in member database
                 except ValueError:
                     foundmember = True
@@ -268,10 +296,23 @@ class XlClubMember(ClubMember):
         csvfile = csvfiles[csvsheets[0]]
 
         # do all the work
-        ClubMember.__init__(self,csvfile,cutoff=cutoff)
+        ClubMember.__init__(self,csvfile,cutoff=cutoff,exceldates=True)
         
-        ## csv files not needed any more
-        #del c
+########################################################################
+class CsvClubMember(ClubMember):
+########################################################################
+    '''
+    ClubMember object with csv input
+    
+    :params csvfilename: excel file from which club members are to be retrieved
+    :params cutoff: cutoff for getmember.  float in (0,1].  higher means strings have to match more closely to be considered "close".  Default 0.6
+    '''
+    
+    #----------------------------------------------------------------------
+    def __init__(self,csvfilename,cutoff=0.6):
+    #----------------------------------------------------------------------
+        # do all the work
+        ClubMember.__init__(self,csvfilename,cutoff=cutoff,exceldates=False)
     
 ########################################################################
 class DbClubMember(ClubMember):
@@ -291,6 +332,7 @@ class DbClubMember(ClubMember):
         racedb.setracedb(dbfilename)
         s = racedb.Session()
         
+        # TODO: don't really need this since adding exceldates as parameter to ClubMember, but for now keeping for safety
         def _dob2excel(s,f):
             try:
                 xl = tYmd.asc2excel(f)
@@ -330,7 +372,7 @@ class DbClubMember(ClubMember):
         csvfile = csvfiles[csvsheets[0]]
         
         # do all the work
-        ClubMember.__init__(self,csvfile,cutoff=cutoff)
+        ClubMember.__init__(self,csvfile,cutoff=cutoff,exceldates=True)
         
         ## csv files not needed any more
         #del d

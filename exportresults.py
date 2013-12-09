@@ -75,7 +75,7 @@ def collect(outfile,begindate=None,enddate=None,thisracedb=None):
     # open the database
     racedb.setracedb(thisracedb)
     session = racedb.Session()
-    
+
     # for each member, gather results
     members = session.query(racedb.Runner).filter_by(member=True,active=True).all()
     rows = []
@@ -83,7 +83,7 @@ def collect(outfile,begindate=None,enddate=None,thisracedb=None):
         runnername = member.name
         runnerdob = member.dateofbirth
         runnergender = member.gender
-        
+
         # loop through each of the runner's results
         # NOTE: results are possibly stored multiple times, for different series -- these will be deduplicated later
         for result in member.results:

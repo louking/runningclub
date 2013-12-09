@@ -29,8 +29,8 @@ importmembers - update club members within database
 
 Membership spreadsheet must have at least the following columns:
 
-    * First - first name
-    * Last - last name
+    * First (or GivenName) - first name
+    * Last (or FamilyName) - last name
     * DOB - date of birth
     * Gender - M or F
     * City - hometown city
@@ -45,6 +45,7 @@ import os.path
 import csv
 
 # pypi
+#from IPython.core.debugger import Tracer; debughere = Tracer(); debughere() # set breakpoint where needed
 
 # github
 
@@ -67,7 +68,7 @@ def main():
     update club membership information
     '''
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
-    parser.add_argument('memberfile',help='file with member information')
+    parser.add_argument('memberfile',help='csv, xls or xlsx file with member information')
     parser.add_argument('-r','--racedb',help='filename of race database (default is as configured during rcuserconfig)',default=None)
     parser.add_argument('--debug',help='if set, create updatemembers.txt for debugging',action='store_true')
     args = parser.parse_args()
@@ -80,7 +81,16 @@ def main():
     session = racedb.Session()
     
     # get clubmembers from file
-    members = clubmember.XlClubMember(args.memberfile)
+    memberfile = args.memberfile
+    root,ext = os.path.splitext(memberfile)
+    if ext in ['.xls','.xlsx']:
+        members = clubmember.XlClubMember(memberfile)
+    elif ext in ['.csv']:
+        members = clubmember.CsvClubMember(memberfile)
+    else:
+        print '***ERROR: invalid memberfile {}, must be csv, xls or xlsx'.format(memberfile)
+        return
+        
     
     # get all the member runners currently in the database
     # hash them into dict by (name,dateofbirth)
@@ -107,7 +117,7 @@ def main():
         for thismember in thesemembers:
             thisname = thismember['name']
             thisdob = thismember['dob']
-            thisgender = thismember['gender']
+            thisgender = thismember['gender'][0].upper()    # male -> M, female -> F
             thishometown = thismember['hometown']
 
             # prep for if .. elif below by running some queries
