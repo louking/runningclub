@@ -320,13 +320,13 @@ class DbClubMember(ClubMember):
     '''
     ClubMember object with database input
     
-    :params dbfilename: database file from which club members are to be retrieved
+    :params dbfilename: database file from which club members are to be retrieved -- default is to use configured database
     :params cutoff: cutoff for getmember.  float in (0,1].  higher means strings have to match more closely to be considered "close".  Default 0.6
     :params \*\*kwfilter: keyword parameters for racedb.Runner database filter
     '''
     
     #----------------------------------------------------------------------
-    def __init__(self,dbfilename,cutoff=0.6,**kwfilter):
+    def __init__(self,dbfilename=None,cutoff=0.6,**kwfilter):
     #----------------------------------------------------------------------
         # create database session
         racedb.setracedb(dbfilename)

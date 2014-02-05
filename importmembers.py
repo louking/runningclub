@@ -43,6 +43,7 @@ import pdb
 import argparse
 import os.path
 import csv
+import time
 
 # pypi
 #from IPython.core.debugger import Tracer; debughere = Tracer(); debughere() # set breakpoint where needed
@@ -90,7 +91,9 @@ def main():
     else:
         print '***ERROR: invalid memberfile {}, must be csv, xls or xlsx'.format(memberfile)
         return
-        
+    
+    # get old clubmembers from database
+    dbmembers = clubmember.DbClubMember()   # use default database
     
     # get all the member runners currently in the database
     # hash them into dict by (name,dateofbirth)
@@ -108,7 +111,12 @@ def main():
     NEWMEM = open(os.path.join(logdir,newmemlogname),'wb')
     NEWMEMCSV = csv.DictWriter(NEWMEM,['name','dob'])
     NEWMEMCSV.writeheader()
-        
+    
+    # prepare for age check
+    thisyear = timeu.epoch2dt(time.time()).year
+    asofasc = '{}-1-1'.format(thisyear) # jan 1 of current year
+    asof = tYmd.asc2dt(asofasc) 
+    
     # process each name in new membership list
     allmembers = members.getmembers()
     for name in allmembers:
@@ -121,7 +129,14 @@ def main():
             thishometown = thismember['hometown']
 
             # prep for if .. elif below by running some queries
-            dbmember = racedb.getunique(session,racedb.Runner,member=True,name=thisname,dateofbirth=thisdob)
+            # handle close matches, if DOB does match
+            age = timeu.age(asof,tYmd.asc2dt(thisdob))
+            matchingmember = dbmembers.findmember(thisname,age,asofasc)
+            dbmember = None
+            if matchingmember:
+                membername,memberdob = matchingmember
+                if memberdob == thisdob:
+                    dbmember = racedb.getunique(session,racedb.Runner,member=True,name=membername,dateofbirth=thisdob)
             
             # TODO: need to handle case where dob transitions from '' to actual date of birth
             
@@ -139,7 +154,15 @@ def main():
             # get instance, if it exists, and make any updates
             found = False
             if dbmember is not None:
-                thisrunner = racedb.Runner(thisname,thisdob,thisgender,thishometown)
+                thisrunner = racedb.Runner(membername,thisdob,thisgender,thishometown)
+                
+                # this is also done down below, but must be done here in case member's name has changed
+                if (thisrunner.name,thisrunner.dateofbirth) in inactiverunners:
+                    inactiverunners.pop((thisrunner.name,thisrunner.dateofbirth))
+
+                # overwrite member's name if necessary
+                thisrunner.name = thisname  
+                
                 added = racedb.update(session,racedb.Runner,dbmember,thisrunner,skipcolumns=['id'])
                 found = True
                 
