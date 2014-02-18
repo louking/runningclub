@@ -41,7 +41,6 @@ def analyzemembership(directory,files):
     '''
     
     membersbymonth = {} # {year:{month:totalmembers,...}...}
-    members = {}        # {dob:[{'GivenName':GivenName,'FamilyName':FamilyName},...],...}
     
     
     

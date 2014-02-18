@@ -193,7 +193,7 @@ def updateraceseries(session, fileraces):
             raceseries = racedb.RaceSeries(thisrace.id,thisseries.id)
             added = racedb.insert_or_update(session,racedb.RaceSeries,raceseries,skipcolumns=['id'],raceid=thisrace.id,seriesid=thisseries.id)
         
-            # remove this division from collection of divisions which should be deleted in database
+            # remove this series from collection of series which should be deleted in database
             if (thisrace.id,thisseries.id) in inactiveraceseries:
                 inactiveraceseries.pop((thisrace.id,thisseries.id))
             
@@ -203,7 +203,7 @@ def updateraceseries(session, fileraces):
                 else:
                     OUT.write('no updates necessary {0}\n'.format(raceseries))
     
-    # any divisions remaining in 'inactiveraceseries' should be deactivated
+    # any race/series remaining in 'inactiveraceraceseries' should be deactivated
     for d in inactiveraceseries:
         raceid,seriesid = d
         thisraceseries = session.query(racedb.RaceSeries).filter_by(raceid=raceid,seriesid=seriesid).first() # should be only one returned by filter
