@@ -34,6 +34,7 @@ from operator import itemgetter
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.dates as mdates
+from matplotlib.font_manager import FontProperties
 
 # home grown
 from loutilities import timeu
@@ -55,7 +56,7 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
 
     # format the ticks by month
     months   = mdates.MonthLocator()  # every month
-    datefmt = mdates.DateFormatter('       %b')
+    datefmt = mdates.DateFormatter('        %b')
     ax.xaxis.set_major_formatter(datefmt)
     ax.xaxis.set_major_locator(months)
 
@@ -68,6 +69,9 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
     if debugfile:
         DEB = open(debugfile,'w')
         DEB.write('date,count\n')
+    
+    # set up annotation font properties
+    annofont = FontProperties(size='small')
     
     # loop each year
     for y in ordyears.keys():
@@ -103,13 +107,15 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
         # plot the data
         ax.plot(dates, cumvalues, label=y)
         for anno in annos:
-            ax.annotate(anno[1],anno)
+            ax.annotate(anno[1],anno,fontproperties=annofont)
 
     if debugfile:
         DEB.close()
     
-    # add legend and save
+    # add labels, legend, grid and save
+    ax.set_ylabel('number of members')
     ax.legend(loc=1,bbox_to_anchor=(1.3, 1))    #bbox_to_anchor moves legend outside axes
+    ax.grid(True)
     fig.savefig(outfile,format='png')
         
 #----------------------------------------------------------------------
@@ -130,8 +136,6 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
         DETL = csv.DictWriter(_DETL,['ord','effective','name','catchup','renewal','join','expiration'])
         DETL.writeheader()
         detlrecord = 0
-    if overlapfile:
-        names = {}
 
     # input is csv file
     INCSV = csv.DictReader(memberfileh)
@@ -155,12 +159,13 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
             names[thisname] = []
         names[thisname].append(thisrec)
 
+    #debug
     if overlapfile:
         _OVRLP = open(overlapfile,'wb')
         OVRLP = csv.DictWriter(_OVRLP,['MemberID','name','dob','renewal','join','expiration','tossed'],extrasaction='ignore')
         OVRLP.writeheader()
 
-    # sort list of records under each name
+    # sort list of records under each name, and remove overlaps between records
     for thisname in names:
         #if len(names[thisname]) >= 4:
         #    pdb.set_trace()
@@ -170,13 +175,15 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
         names[thisname] = sorted(names[thisname],key=lambda k: (k['expiration'],k['join']))
         toss = []
         for i in range(1,len(names[thisname])):
-            # if overlapped record detected
+            # if overlapped record detected, push this record's join date after last record's expiration
+            # note this only works for overlaps across two records -- if overlaps occur across three or more records that isn't detected
+            # this seems ok as only two record problems have been seen so far
             if names[thisname][i]['join'] <= names[thisname][i-1]['expiration']:
                 lastexp_dt = tYMD.asc2dt(names[thisname][i-1]['expiration'])
                 thisexp_dt = tYMD.asc2dt(names[thisname][i]['expiration'])
                 jan1_dt = datetime(lastexp_dt.year+1,1,1)
                 jan1_asc = tYMD.dt2asc(jan1_dt)
-                # ignore weird record anomalies
+                # ignore weird record anomalies where this record duration is fully within last record's
                 if jan1_dt > thisexp_dt:
                     toss.append(i)
                     names[thisname][i]['tossed'] = 'Y'
@@ -187,7 +194,7 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
                 # update this record's join dates
                 names[thisname][i]['join'] = jan1_asc
                 names[thisname][i]['fullrec']['JoinDate'] = jan1_asc
-        # throw out anomalous records
+        # throw out anomalous records. reverse toss first so the pops don't change the indexes.
         toss.reverse()
         for i in toss:
             names[thisname].pop(i)
