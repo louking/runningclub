@@ -240,10 +240,10 @@ class AgeGrade():
             
          # extrapolate for ages > 99
         elif age > 99:
+            # don't do extrapolation
             if True:
                 factor,openstd = self.getfactorstd(99,gen,distmeters)
             
-            # don't do extrapolation
             else:    
                 age1 = 98
                 age2 = 99
@@ -259,6 +259,81 @@ class AgeGrade():
             # order must match header written in self.__init__
             self.DEBUG.write('{},{},{},{},{},{},{},{}\n'.format(distmeters,age,gen,openstd,factor,time,agresult,agpercentage))
         return agpercentage,agresult,factor
+
+    #----------------------------------------------------------------------
+    def result(self,age,gen,distmiles,agpc):
+    #----------------------------------------------------------------------
+        '''
+        returns age grade statistics for the indicated age, gender, distance, result time
+        
+        :param age: integer age.  If float is supplied, integer portion is used (no interpolation of fractional age)
+        :param gen: gender - M or F
+        :param distmiles: distance (miles)
+        :param agpc: age grade percentage - between 0 and 100
+        
+        :rtype: result in seconds
+        '''
+        
+        # check for some input errors
+        gen = gen.upper()
+        if gen not in ['F','M']:
+            raise parameterError, 'gen must be M or F'
+
+        # number of meters in a mile -- close enough for this data set
+        mpermile = 1609
+        
+        # some known conversions
+        cdist = {26.2:42200,13.1:21100}
+        
+        # determine distance in meters
+        if distmiles in cdist:
+            distmeters = cdist[distmiles]
+        else:
+            distmeters = distmiles*mpermile
+        
+        # check distance within range.  Make min and max float so exception format specification works
+        distlist = self.agegradedata[gen].keys()
+        minmeters = min(distlist)*1.0
+        maxmeters = max(distlist)*1.0
+        if distmeters < minmeters or distmeters > maxmeters:
+            raise parameterError, 'distmiles must be between {0:f0.3} and {1:f0.1}'.format(minmeters/mpermile,maxmeters/mpermile)
+
+        # interpolate factor and openstd based on distance for this age
+        age = int(age)
+        if age in range(5,100):
+            factor,openstd = self.getfactorstd(age,gen,distmeters)
+        
+        # extrapolate for ages < 5
+        elif age < 5:
+            # don't do extrapolation
+            if True:
+                factor,openstd = self.getfactorstd(5,gen,distmeters)
+            
+            else:
+                age1 = 5
+                age2 = 6
+                factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
+                factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
+                factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
+                openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
+            
+         # extrapolate for ages > 99
+        elif age > 99:
+            if True:
+                factor,openstd = self.getfactorstd(99,gen,distmeters)
+            
+            # don't do extrapolation
+            else:    
+                age1 = 98
+                age2 = 99
+                factor1,openstd1 = self.getfactorstd(age1,gen,distmeters)
+                factor2,openstd2 = self.getfactorstd(age2,gen,distmeters)
+                factor = factor1 + (1.0*(age-age1)/(age2-age1))*(factor2-factor1)
+                openstd = openstd1 + (1.0*(age-age1)/(age2-age1))*(openstd2-openstd1)
+        
+        # return result
+        time = (openstd/factor)/(agpc/100.0)
+        return time
 
 #----------------------------------------------------------------------
 def main(): 

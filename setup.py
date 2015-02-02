@@ -43,6 +43,7 @@ setup(
     scripts = [
         'runningclub/agegrade.py',
         'runningclub/exportresults.py',
+        'runningclub/genagtables.py',
         'runningclub/importmembers.py',
         'runningclub/importraces.py',
         'runningclub/importresults.py',
@@ -76,6 +77,7 @@ setup(
         'console_scripts': [
             'agegrade = runningclub.agegrade:main',
             'exportresults = runningclub.exportresults:main',
+            'genagtables = runningclub.genagtables:main',
             'importmembers = runningclub.importmembers:main',
             'importraces = runningclub.importraces:main',
             'importresults = runningclub.importresults:main',
