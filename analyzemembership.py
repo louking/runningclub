@@ -85,6 +85,8 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
         # actual year does not matter -- use 2016 because it is a leap year
         tempdates = ordyears[y].keys()
         dates = []
+        d0 = tempdates[0]
+        lastsum = ordyears[y][d0]
         for d in tempdates:
             normdate = datetime(2016,d.month,d.day)
             dates.append(normdate)
@@ -94,8 +96,9 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
             if debugfile:
                 DEB.write('{}-{}-{},{}\n'.format(y,d.month,d.day,annosum))
             if d.day < annoday:
-                annos.append((normdate,annosum))
+                annos.append((normdate,lastsum))
             annoday = d.day
+            lastsum = annosum
         
         # also annotate last date in year
         annos.append((normdate,annosum))
