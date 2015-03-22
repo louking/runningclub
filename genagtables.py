@@ -89,7 +89,7 @@ def genagtables(gen,agpcs,ages):
             
             # generate each result
             for dist in DISTTBL.keys():
-                thistime = rendertime(ag.result(age,gen,DISTTBL[dist],agpc),0, False)
+                thistime = rendertime(ag.result(age,gen,DISTTBL[dist],agpc),0, useceiling=False, usefloor=True)
                 
                 # make sure format is h:m:s
                 while len(thistime.split(':')) < 3:

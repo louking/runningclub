@@ -96,14 +96,15 @@ def renderdate(dbdate):
     return rval
 
 #----------------------------------------------------------------------
-def adjusttime(rawtime,precision,useceiling=True): 
+def adjusttime(rawtime,precision,useceiling=True,usefloor=False): 
 #----------------------------------------------------------------------
     '''
     adjust raw time based on precision
     
     :param rawtime: time in seconds
     :param precision: number of places after decimal point
-    :param useceiling: True if ceiling function to be used (round up)
+    :param useceiling: True if ceiling function to be used (round up) - takes precedence if both useceiling and usefloor are True
+    :param useceiling: True if floor function is to be used (round down)
     
     :rtype: adjusted time in seconds (float)
     '''
@@ -116,6 +117,8 @@ def adjusttime(rawtime,precision,useceiling=True):
     fixedtime = rawtime * multiplier
     if useceiling:
         adjfixedtime = math.ceil(fixedtime)
+    elif usefloor:
+        adjfixedtime = math.floor(fixedtime)
     else:
         adjfixedtime = round(fixedtime)
     adjtime = adjfixedtime / multiplier
@@ -123,14 +126,15 @@ def adjusttime(rawtime,precision,useceiling=True):
     return adjtime
 
 #----------------------------------------------------------------------
-def rendertime(dbtime,precision,useceiling=True): 
+def rendertime(dbtime,precision,useceiling=True,usefloor=False): 
 #----------------------------------------------------------------------
     '''
     create time for display
     
     :param dbtime: time in seconds
     :param precision: number of places after decimal point
-    :param useceiling: True if ceiling function to be used (round up)
+    :param useceiling: True if ceiling function to be used (round up) - takes precedence if both useceiling and usefloor are True
+    :param useceiling: True if floor function is to be used (round down)
     '''
     
     if precision > 0:
@@ -169,6 +173,8 @@ def rendertime(dbtime,precision,useceiling=True):
         # note round up per USATF rule 165
         if useceiling:
             remdbtime = int(math.ceil(dbtime))
+        elif usefloor:
+            remdbtime = int(math.floor(dbtime))
         else:
             remdbtime = int(round(dbtime))
         rettime = ''
