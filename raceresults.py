@@ -51,6 +51,9 @@ fieldxform = {
     'gender':['gender','sex','male/female','s'],
     'age':['age','ag'],
     'time':['actual time','nettime','chiptime','time','guntime'],
+    'hometown':['hometown'],
+    'city':['city'],
+    'state':['state','st'],
 }
 
 # exceptions for this module.  See __init__.py for package exceptions
