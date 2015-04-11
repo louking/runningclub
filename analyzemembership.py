@@ -4,7 +4,7 @@
 #
 #       Date            Author          Reason
 #       ----            ------          ------
-#       01/21/14        Lou King        Create
+#       01/15/15        Lou King        Create
 #
 #   Copyright 2014 Lou King
 #
@@ -28,7 +28,6 @@ import argparse
 import csv
 from datetime import datetime
 from collections import OrderedDict
-from operator import itemgetter
 
 # other
 import matplotlib.pyplot as plt
