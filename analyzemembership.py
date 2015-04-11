@@ -37,8 +37,9 @@ import matplotlib.dates as mdates
 from matplotlib.font_manager import FontProperties
 
 # home grown
+from runningaheadmembers import RunningAheadMembers
 from loutilities import timeu
-tYMD = timeu.asctime('%Y-%m-%d')
+ymd = timeu.asctime('%Y-%m-%d')
 import version
 
 #----------------------------------------------------------------------
@@ -62,7 +63,7 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
 
     lastyear = ordyears.keys()[-1]
     lastdate = ordyears[lastyear].keys()[-1]
-    fig.suptitle('year on year member count as of {}'.format(tYMD.dt2asc(lastdate)))
+    fig.suptitle('year on year member count as of {}'.format(ymd.dt2asc(lastdate)))
     fig.subplots_adjust(bottom=0.1, right=0.8, top=0.93)
 
     #pdb.set_trace()
@@ -140,87 +141,21 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
         DETL.writeheader()
         detlrecord = 0
 
-    # input is csv file
-    INCSV = csv.DictReader(memberfileh)
+    # pull in memberfile
+    members = RunningAheadMembers(memberfileh,overlapfile=overlapfile)
     
-    ## preprocess file to remove overlaps between join date and expiration date across records
-    # each member's records are appended to a list of records in dict keyed by (lname,fname,dob)
-    names = {}
-    for membership in INCSV:
-        asc_joindate = membership['JoinDate']
-        asc_expdate = membership['ExpirationDate']
-        fname = membership['GivenName']
-        lname = membership['FamilyName']
-        dob = membership['DOB']
-        memberid = membership['MemberID']
-        fullname = '{}, {}'.format(lname,fname)
-
-        # get list of records associated with each member, pulling out significant fields
-        thisrec = {'MemberID':memberid,'name':fullname,'join':asc_joindate,'expiration':asc_expdate,'dob':dob,'fullrec':membership}
-        thisname = (lname,fname,dob)
-        if not thisname in names:
-            names[thisname] = []
-        names[thisname].append(thisrec)
-
-    #debug
-    if overlapfile:
-        _OVRLP = open(overlapfile,'wb')
-        OVRLP = csv.DictWriter(_OVRLP,['MemberID','name','dob','renewal','join','expiration','tossed'],extrasaction='ignore')
-        OVRLP.writeheader()
-
-    # sort list of records under each name, and remove overlaps between records
-    for thisname in names:
-        #if len(names[thisname]) >= 4:
-        #    pdb.set_trace()
-
-        # sort should result so records within a name are by join date within expiration year
-        # see http://stackoverflow.com/questions/72899/how-do-i-sort-a-list-of-dictionaries-by-values-of-the-dictionary-in-python
-        names[thisname] = sorted(names[thisname],key=lambda k: (k['expiration'],k['join']))
-        toss = []
-        for i in range(1,len(names[thisname])):
-            # if overlapped record detected, push this record's join date after last record's expiration
-            # note this only works for overlaps across two records -- if overlaps occur across three or more records that isn't detected
-            # this seems ok as only two record problems have been seen so far
-            if names[thisname][i]['join'] <= names[thisname][i-1]['expiration']:
-                lastexp_dt = tYMD.asc2dt(names[thisname][i-1]['expiration'])
-                thisexp_dt = tYMD.asc2dt(names[thisname][i]['expiration'])
-                jan1_dt = datetime(lastexp_dt.year+1,1,1)
-                jan1_asc = tYMD.dt2asc(jan1_dt)
-                # ignore weird record anomalies where this record duration is fully within last record's
-                if jan1_dt > thisexp_dt:
-                    toss.append(i)
-                    names[thisname][i]['tossed'] = 'Y'
-                # debug
-                if overlapfile:
-                    OVRLP.writerow(names[thisname][i-1])    # this could get written multiple times, I suppose
-                    OVRLP.writerow(names[thisname][i])
-                # update this record's join dates
-                names[thisname][i]['join'] = jan1_asc
-                names[thisname][i]['fullrec']['JoinDate'] = jan1_asc
-        # throw out anomalous records. reverse toss first so the pops don't change the indexes.
-        toss.reverse()
-        for i in toss:
-            names[thisname].pop(i)
+    # iterate through memberships
+    memberships = members.membership_iter()
     
-    # create new, updated memberships
-    memberships = []
-    for thisname in names:
-        for thismembership in names[thisname]:
-            memberships.append(thismembership['fullrec'])
-    
-    # debug
-    if overlapfile:
-        _OVRLP.close()
-
     ## loop through preprocessed records
     years = {}
     for membership in memberships:
         asc_renewaldate = membership['RenewalDate']
         asc_joindate = membership['JoinDate']
         asc_expdate = membership['ExpirationDate']
-        renewaldate = tYMD.asc2dt(asc_renewaldate)
-        joindate = tYMD.asc2dt(asc_joindate)
-        expdate = tYMD.asc2dt(asc_expdate)
+        renewaldate = ymd.asc2dt(asc_renewaldate)
+        joindate = ymd.asc2dt(asc_joindate)
+        expdate = ymd.asc2dt(asc_expdate)
         fname = membership['GivenName']
         lname = membership['FamilyName']
         dob = membership['DOB']
@@ -249,7 +184,7 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
             # debug
             if detailfile:
                 detlrecord += 1
-                DETL.writerow({'effective':tYMD.dt2asc(effectivedate),'name':fullname,
+                DETL.writerow({'effective':ymd.dt2asc(effectivedate),'name':fullname,
                                'renewal':asc_renewaldate,'join':asc_joindate,'expiration':asc_expdate,
                                'ord':detlrecord})
 
@@ -263,7 +198,7 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
             # debug
             if detailfile:
                 detlrecord += 1
-                DETL.writerow({'effective':tYMD.dt2asc(jan1),'name':fullname,
+                DETL.writerow({'effective':ymd.dt2asc(jan1),'name':fullname,
                                'renewal':asc_renewaldate,'join':asc_joindate,'expiration':asc_expdate,
                                'catchup':'y',
                                'ord':detlrecord})
