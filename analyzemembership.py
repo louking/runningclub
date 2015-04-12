@@ -36,7 +36,7 @@ import matplotlib.dates as mdates
 from matplotlib.font_manager import FontProperties
 
 # home grown
-from runningaheadmembers import RunningAheadMembers
+from running.runningaheadmembers import RunningAheadMembers
 from loutilities import timeu
 ymd = timeu.asctime('%Y-%m-%d')
 import version
@@ -149,16 +149,15 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     ## loop through preprocessed records
     years = {}
     for membership in memberships:
-        asc_renewaldate = membership['RenewalDate']
-        asc_joindate = membership['JoinDate']
-        asc_expdate = membership['ExpirationDate']
+        asc_renewaldate = membership.renew
+        asc_joindate = membership.join
+        asc_expdate = membership.expiration
         renewaldate = ymd.asc2dt(asc_renewaldate)
         joindate = ymd.asc2dt(asc_joindate)
         expdate = ymd.asc2dt(asc_expdate)
-        fname = membership['GivenName']
-        lname = membership['FamilyName']
-        dob = membership['DOB']
-        memberid = membership['MemberID']
+        fname = membership.fname
+        lname = membership.lname
+        dob = membership.dob
         fullname = '{}, {}'.format(lname,fname)
         
         # semantics of joindate vs renewal date is different on date of initial bulk load
