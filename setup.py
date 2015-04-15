@@ -42,6 +42,7 @@ setup(
 #    include_package_data = True,
     scripts = [
         'runningclub/agegrade.py',
+        'runningclub/analyzeeventmembers.py',
         'runningclub/analyzemembership.py',
         'runningclub/exportresults.py',
         'runningclub/genagtables.py',
@@ -78,6 +79,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'agegrade = runningclub.agegrade:main',
+            'analyzeeventmembers = runningclub.analyzeeventmembers:main',
             'analyzemembership = runningclub.analyzemembership:main',
             'exportresults = runningclub.exportresults:main',
             'genagtables = runningclub.genagtables:main',
