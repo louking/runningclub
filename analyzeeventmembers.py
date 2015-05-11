@@ -117,7 +117,7 @@ def analyzemembership(memberfileh, participantfileh, detailfile=None):
     # debug
     if detailfile:
         _DETL = open(detailfile,'wb')
-        detailhdr = 'eventname,dob,membername,status,joindate,registered,join2event'.split(',')
+        detailhdr = 'eventname,dob,membername,email,status,joindate,registered,join2event'.split(',')
         DETL = csv.DictWriter(_DETL,detailhdr)
         DETL.writeheader()
 
@@ -145,9 +145,10 @@ def analyzemembership(memberfileh, participantfileh, detailfile=None):
         dt_regdate  = mdy.asc2dt(asc_regdate.split(' ')[0])
         asc_regdate = ymd.dt2asc(dt_regdate)        # convert to yyyy-mm-dd
         d_regdate = date(dt_regdate.year, dt_regdate.month, dt_regdate.day)
+        email = participant.email
 
         # create record for detailfile
-        detailrec = {'eventname':searchname,'dob':dob,'registered':asc_regdate}
+        detailrec = {'eventname':searchname,'dob':dob,'registered':asc_regdate,'email':email}
 
         # try to find in member file
         key = membership.getmemberkey(lname,fname,dob)
