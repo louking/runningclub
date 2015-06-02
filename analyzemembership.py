@@ -182,9 +182,7 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
         effectivedate = joindate
         
         ## increment the member count for the member's effective date
-        # need to also collect entries for final date of each month, so annotations in rendermemberanalysis work nicely
         year = effectivedate.year
-        thismonth = 1
 
         # good data starts in 2013
         if year >= 2013:
@@ -192,23 +190,6 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
             if year not in years:
                 years[year] = {}
 
-            # TODO: this logic would be more efficient outside the membership loop
-            # if we are at a new month, create an empty entry for the first day of this month
-            # need while loop in case there was a whole month without memberships
-            # also make sure there is an entry the last date of the previous month
-            while (thismonth != effectivedate.month):
-                # make sure there is an entry the first date of this month
-                thismonth += 1
-                firstdateinmonth = datetime(year,thismonth,1)
-                if firstdateinmonth not in years[year]:
-                    years[year][firstdateinmonth] = 0
-                # make sure there is entry the last date of the previous month
-                prevmonth = thismonth - 1
-                lastdayprevmonth = monthrange(year,prevmonth)[1]
-                lastdateprevmonth = datetime(year,thismonth-1,lastdayprevmonth)
-                if lastdateprevmonth not in years[year]:
-                    years[year][lastdateprevmonth] = 0
-                    
             # increment the effectivedate date within the year
             years[year][effectivedate] = years[year].get(effectivedate,0) + 1
             
@@ -247,7 +228,33 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     allyears.sort()
     ordyears = OrderedDict()
     for y in allyears:
-        ordyears[y] = OrderedDict(sorted(years[y].items(), key=lambda t: t[0]))
+        ordyears[y] = OrderedDict()
+
+        # make sure each month has entry in first and final date, so annotations in rendermembershipanalysis work nicely
+        thismonth = 1
+        for thisitem in sorted(years[y].items(), key=lambda t: t[0]):
+            thisdate = thisitem[0]
+
+            # if we are at a new month, create an empty entry for the first day of this month
+            # need while loop in case there was a whole month without memberships
+            # also make sure there is an entry the last date of the previous month
+            while (thismonth != thisdate.month):
+                thismonth += 1
+
+                # make sure there is entry the last date of the previous month
+                prevmonth = thismonth - 1
+                lastdayprevmonth = monthrange(y,prevmonth)[1]
+                lastdateprevmonth = datetime(y,thismonth-1,lastdayprevmonth)
+                if lastdateprevmonth not in ordyears[y]:
+                    ordyears[y][lastdateprevmonth] = 0
+
+                # make sure there is an entry the first date of this month
+                firstdateinmonth = datetime(y,thismonth,1)
+                if firstdateinmonth not in ordyears[y]:
+                    ordyears[y][firstdateinmonth] = 0
+                    
+            # add thisitem to ordered dict for year
+            ordyears[y][thisitem[0]] = thisitem[1]
         
     return ordyears
     
