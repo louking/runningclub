@@ -27,6 +27,7 @@ import pdb
 import argparse
 import csv
 from datetime import datetime
+from calendar import monthrange
 from collections import OrderedDict
 
 # other
@@ -42,9 +43,10 @@ ymd = timeu.asctime('%Y-%m-%d')
 import version
 
 #----------------------------------------------------------------------
-def rendermemberanalysis(ordyears,outfile,debugfile=None): 
+def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None): 
 #----------------------------------------------------------------------
     '''
+    :param fullmonth: true if last point is last date of final full month
     :param ordyears: return value from analyzemembership
     :param outfile: output .png file with chart
     :param debugfile: optional summary debug file name
@@ -81,6 +83,14 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
         annomonth = 0
         annosum = 0
     
+        # if desired, remove months at end which are not "full months"
+        # assumes last date in month is always populated
+        if fullmonth:
+            tempdates = ordyears[y].keys()
+            while tempdates[-1].day != monthrange(tempdates[-1].year,tempdates[-1].month)[1]:
+                del ordyears[y][tempdates[-1]]
+                del tempdates[-1]
+
         # normalize dates to 2016
         # actual year does not matter -- use 2016 because it is a leap year
         tempdates = ordyears[y].keys()
@@ -182,13 +192,22 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
             if year not in years:
                 years[year] = {}
 
+            # TODO: this logic would be more efficient outside the membership loop
             # if we are at a new month, create an empty entry for the first day of this month
             # need while loop in case there was a whole month without memberships
+            # also make sure there is an entry the last date of the previous month
             while (thismonth != effectivedate.month):
+                # make sure there is an entry the first date of this month
                 thismonth += 1
                 firstdateinmonth = datetime(year,thismonth,1)
                 if firstdateinmonth not in years[year]:
                     years[year][firstdateinmonth] = 0
+                # make sure there is entry the last date of the previous month
+                prevmonth = thismonth - 1
+                lastdayprevmonth = monthrange(year,prevmonth)[1]
+                lastdateprevmonth = datetime(year,thismonth-1,lastdayprevmonth)
+                if lastdateprevmonth not in years[year]:
+                    years[year][lastdateprevmonth] = 0
                     
             # increment the effectivedate date within the year
             years[year][effectivedate] = years[year].get(effectivedate,0) + 1
@@ -240,6 +259,7 @@ def main():
     analyze membership
     '''
     parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
+    parser.add_argument('-m','--fullmonth',help='if set, final annotation is last date of full month',action='store_true')
     parser.add_argument('-d','--debugfile',help='optional debug file',default=None)
     parser.add_argument('-e','--detailfile',help='optional detailed debug file',default=None)
     parser.add_argument('-o','--overlapfile',help='optional overlap debug file to record overlapping join / expiration date periods',default=None)
@@ -253,7 +273,7 @@ def main():
     IN.close()
     
     # render analyzed data
-    rendermemberanalysis(ordyears,args.outfile,args.debugfile)
+    rendermemberanalysis(ordyears,args.fullmonth,args.outfile,args.debugfile)
     
 # ##########################################################################################
 #	__main__
