@@ -78,7 +78,7 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
         
         # collect annotations
         annos = []
-        annoday = 32
+        annomonth = 0
         annosum = 0
     
         # normalize dates to 2016
@@ -91,13 +91,15 @@ def rendermemberanalysis(ordyears,outfile,debugfile=None):
             normdate = datetime(2016,d.month,d.day)
             dates.append(normdate)
             
-            # annotate first day in month
+            # annotate first day each month with lastsum from previous month
             annosum += ordyears[y][d]
             if debugfile:
                 DEB.write('{}-{}-{},{}\n'.format(y,d.month,d.day,annosum))
-            if d.day < annoday:
+            while annomonth < d.month:
                 annos.append((normdate,lastsum))
-            annoday = d.day
+                annomonth += 1
+
+            # new lastsum
             lastsum = annosum
         
         # also annotate last date in year
@@ -169,12 +171,24 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
         # when clicking "Export individual records", joindate is the effective date for the specific year
         effectivedate = joindate
         
-        # good data starts in 2013
+        ## increment the member count for the member's effective date
+        # need to also collect entries for final date of each month, so annotations in rendermemberanalysis work nicely
         year = effectivedate.year
+        thismonth = 1
+
+        # good data starts in 2013
         if year >= 2013:
             # create year if it hasn't been created
             if year not in years:
                 years[year] = {}
+
+            # if we are at a new month, create an empty entry for the first day of this month
+            # need while loop in case there was a whole month without memberships
+            while (thismonth != effectivedate.month):
+                thismonth += 1
+                firstdateinmonth = datetime(year,thismonth,1)
+                if firstdateinmonth not in years[year]:
+                    years[year][firstdateinmonth] = 0
                     
             # increment the effectivedate date within the year
             years[year][effectivedate] = years[year].get(effectivedate,0) + 1
@@ -187,6 +201,10 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
                                'ord':detlrecord})
 
         # for all years after effectivedate's until expdate's, increment jan 1
+        # this happens if there is a grace period and member's renewal counts for following year, 
+        # and for multiyear membership
+        # NOTE: this is not under "if year >= 2013" because there are some joindates in 2012, 
+        # captured here under jan1, 2013
         for y in range(effectivedate.year+1,expdate.year+1):
             jan1 = datetime(y,1,1)
             if y not in years:
