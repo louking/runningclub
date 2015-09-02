@@ -29,6 +29,7 @@ import csv
 from datetime import datetime
 from calendar import monthrange
 from collections import OrderedDict
+import time
 
 # other
 import matplotlib.pyplot as plt
@@ -62,6 +63,32 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
     ax.xaxis.set_major_formatter(datefmt)
     ax.xaxis.set_major_locator(months)
 
+
+    # if desired, remove months at end which are not "full months"
+    # assumes last date in month is always populated
+    if fullmonth:
+        lastyear = ordyears.keys()[-1]
+        lastdate = ordyears[lastyear].keys()[-1]
+        tempdates = ordyears[lastyear].keys()
+
+        # handle all months other than January
+        # delete dates that didn't reach the end of the month for the last month in the data
+        if lastdate.month > 1:
+            while tempdates[-1].day != monthrange(tempdates[-1].year,tempdates[-1].month)[1]:
+                del ordyears[lastyear][tempdates[-1]]
+                del tempdates[-1]
+
+        # handle case where the lastdate is in January but it's not a full month
+        # delete the whole year because that is the same as deleting the partial month of January
+        elif tempdates[-1].day != monthrange(tempdates[-1].year,tempdates[-1].month)[1]:
+            del ordyears[lastyear]
+
+        # nothing to do if full month of January is in the data
+        else:
+            pass
+
+    # set up header and size the plots
+    # note lastyear may have changed from above if fullmonth and lastdate was in January
     lastyear = ordyears.keys()[-1]
     lastdate = ordyears[lastyear].keys()[-1]
     fig.suptitle('year on year member count as of {}'.format(ymd.dt2asc(lastdate)))
@@ -83,14 +110,6 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
         annomonth = 0
         annosum = 0
     
-        # if desired, remove months at end which are not "full months"
-        # assumes last date in month is always populated
-        if fullmonth:
-            tempdates = ordyears[y].keys()
-            while tempdates[-1].day != monthrange(tempdates[-1].year,tempdates[-1].month)[1]:
-                del ordyears[y][tempdates[-1]]
-                del tempdates[-1]
-
         # normalize dates to 2016
         # actual year does not matter -- use 2016 because it is a leap year
         tempdates = ordyears[y].keys()
@@ -222,7 +241,18 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     # debug
     if detailfile:
         _DETL.close()
-        
+    
+    # create an entry with 0 count for today's date, if none exists
+    # if, say, last entry was July 28, this will have the effect of prettying up the output
+    # for full month rendering
+    today = timeu.epoch2dt(time.time())
+    thisyear = today.year
+    thismonth = today.month
+    thisday = today.day
+    today = datetime(thisyear, thismonth, thisday)  # removes time of day from today
+    if today not in years[thisyear]:
+        years[thisyear][today] = 0
+
     # create orderered dicts
     allyears = years.keys()
     allyears.sort()
