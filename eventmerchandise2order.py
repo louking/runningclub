@@ -31,6 +31,7 @@ Usage::
 import pdb
 import argparse
 import csv
+import re
 
 # pypi
 
@@ -60,11 +61,19 @@ def main():
         raise parameterError, 'invalid filename {}, must be .csv file'.format(merchandisefile)
 
     # open input file, output file, and process them
-    with open(merchandisefile,'rb') as _PARTICIPANTS, open('{}-order.csv'.format(merchandisefile[:-4]),'wb') as _ORDERS:
+    with open(merchandisefile,'rb') as _PARTICIPANTS, \
+            open('{}-order.csv'.format(merchandisefile[:-4]),'wb') as _ORDERS, \
+            open('{}-label.csv'.format(merchandisefile[:-4]),'wb') as _LABELS:
         PARTICIPANTS = csv.DictReader(_PARTICIPANTS)
-        outheadings = 'customer,email,product,size,count'.split(',')
-        ORDERS = csv.DictWriter(_ORDERS,outheadings)
+        orderheadings = 'customer,email,product,size,count'.split(',')
+        ORDERS = csv.DictWriter(_ORDERS,orderheadings)
         ORDERS.writeheader()
+        labelheadings = ['customer']
+        MAXORDR = 3
+        for ordr in range(MAXORDR):
+            labelheadings.append('order{}'.format(ordr))
+        LABELS = csv.DictWriter(_LABELS,labelheadings)
+        LABELS.writeheader()
 
         # define mapping of product input headings to output fields
         # TODO: this assumes size is part of the heading -- that could be improved
@@ -87,17 +96,46 @@ def main():
 
         # convert event participants file to order file
         for participant in PARTICIPANTS:
+            labelorder = []
+            customer = '{} {}'.format(participant['First Name'],participant['Last Name'])
             # go through the input fields which reflect merchandise purchase
             for product_field in product_fields:
                 # only parse fields which have data
                 if participant[product_field]:
+                    product = products[product_field]['product']
+                    size = products[product_field]['size']
+                    count = participant[product_field]
                     orderrec = {}
-                    orderrec['customer'] = '{} {}'.format(participant['First Name'],participant['Last Name'])
+                    orderrec['customer'] = customer
                     orderrec['email'] = participant['Email']
-                    orderrec['product'] = products[product_field]['product']
-                    orderrec['size'] = products[product_field]['size']
-                    orderrec['count'] = participant[product_field]
+                    orderrec['product'] = product
+                    orderrec['size'] = size
+                    orderrec['count'] = count
                     ORDERS.writerow(orderrec)
+                    labelorder.append('({}) {} {}'.format(count, size, product))
+
+            # save label if merchandise ordered
+            if labelorder: # is not empty
+                row = {'customer':customer}
+                order = ''
+                ordr = 0
+                items = 0
+                MAXITEMS = 2
+                while labelorder:
+                    thisorder = labelorder[0]
+                    thisorder = re.sub(' Sleeve','',thisorder)
+                    order += '{}; '.format(thisorder)
+                    labelorder.pop(0)
+                    items += 1
+                    # make sure line order is saved if run out of stuff or max number items in order<i>
+                    if not labelorder or items >= MAXITEMS:
+                        items = 0
+                        row['order{}'.format(ordr)] = order
+                        # let last line grow
+                        if ordr < MAXORDR:
+                            ordr += 1
+                            order = ''
+                LABELS.writerow(row)
 
     
 # ##########################################################################################
