@@ -167,7 +167,9 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     # debug
     if detailfile:
         _DETL = open(detailfile,'wb')
-        DETL = csv.DictWriter(_DETL,['ord','effective','name','catchup','renewal','join','expiration'])
+        DETL = csv.DictWriter(_DETL,['ord','effective','name','catchup',
+                                # 'renewal',
+                                'join','expiration'])
         DETL.writeheader()
         detlrecord = 0
 
@@ -180,10 +182,10 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     ## loop through preprocessed records
     years = {}
     for membership in memberships:
-        asc_renewaldate = membership.renew
+        # asc_renewaldate = membership.renew
         asc_joindate = membership.join
         asc_expdate = membership.expiration
-        renewaldate = ymd.asc2dt(asc_renewaldate)
+        # renewaldate = ymd.asc2dt(asc_renewaldate)
         joindate = ymd.asc2dt(asc_joindate)
         expdate = ymd.asc2dt(asc_expdate)
         fname = membership.fname
@@ -191,12 +193,6 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
         dob = membership.dob
         fullname = '{}, {}'.format(lname,fname)
         
-        # semantics of joindate vs renewal date is different on date of initial bulk load
-        #if renewaldate == datetime(2013,11,11):
-        #    effectivedate = joindate
-        #else:
-        #    effectivedate = renewaldate
-            
         # when clicking "Export individual records", joindate is the effective date for the specific year
         effectivedate = joindate
         
@@ -216,7 +212,8 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
             if detailfile:
                 detlrecord += 1
                 DETL.writerow({'effective':ymd.dt2asc(effectivedate),'name':fullname,
-                               'renewal':asc_renewaldate,'join':asc_joindate,'expiration':asc_expdate,
+                               # 'renewal':asc_renewaldate,
+                               'join':asc_joindate,'expiration':asc_expdate,
                                'ord':detlrecord})
 
         # for all years after effectivedate's until expdate's, increment jan 1
@@ -234,7 +231,8 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
             if detailfile:
                 detlrecord += 1
                 DETL.writerow({'effective':ymd.dt2asc(jan1),'name':fullname,
-                               'renewal':asc_renewaldate,'join':asc_joindate,'expiration':asc_expdate,
+                               # 'renewal':asc_renewaldate,
+                               'join':asc_joindate,'expiration':asc_expdate,
                                'catchup':'y',
                                'ord':detlrecord})
     
