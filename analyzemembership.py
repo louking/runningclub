@@ -251,9 +251,15 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     if today not in years[thisyear]:
         years[thisyear][today] = 0
 
+    # remove any entries for any years accumulated after this year
+    # this can happen if long expiration dates are in database
+    for y in range(thisyear+1, max(years.keys())+1):
+        years.pop(y)
+
     # create orderered dicts
     allyears = years.keys()
     allyears.sort()
+
     ordyears = OrderedDict()
     for y in allyears:
         ordyears[y] = OrderedDict()
