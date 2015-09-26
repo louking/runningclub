@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright 2013 Lou King
+# Copyright 2013,2014,2015 Lou King
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ setup(
         'runningclub/rcuserconfig.py',
         'runningclub/renderrace.py',
         'runningclub/renderstandings.py',
+        'runningclub/summarizemembers.py',
     ],
 
     # Project uses reStructuredText, so ensure that the docutils get
@@ -97,6 +98,7 @@ setup(
             'rcuserconfig = runningclub.rcuserconfig:main',
             'renderrace = runningclub.renderrace:main',
             'renderstandings = runningclub.renderstandings:main',
+            'summarizemembers = runningclub.summarizemembers:main',
         ],
     },
 
