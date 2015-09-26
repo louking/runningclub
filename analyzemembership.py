@@ -6,7 +6,7 @@
 #       ----            ------          ------
 #       01/15/15        Lou King        Create
 #
-#   Copyright 2014 Lou King
+#   Copyright 2015 Lou King
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ from matplotlib.font_manager import FontProperties
 from running.runningaheadmembers import RunningAheadMembers
 from loutilities import timeu
 ymd = timeu.asctime('%Y-%m-%d')
+
 import version
 
 #----------------------------------------------------------------------
@@ -308,7 +309,7 @@ def main():
     parser.add_argument('outfile',help='output file (png)')
     args = parser.parse_args()
     
-    # analyzed data in member file
+    # analyze data in member file
     IN = open(args.memberfile,'rb')
     ordyears = analyzemembership(IN,args.detailfile,args.overlapfile)
     IN.close()
