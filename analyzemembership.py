@@ -31,12 +31,6 @@ from calendar import monthrange
 from collections import OrderedDict
 import time
 
-# other
-import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib.dates as mdates
-from matplotlib.font_manager import FontProperties
-
 # home grown
 from running.runningaheadmembers import RunningAheadMembers
 from loutilities import timeu
@@ -54,6 +48,12 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
     :param debugfile: optional summary debug file name
     '''
     
+    # only required to render analysis -- removed from module level to allow module on godaddy
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import matplotlib.dates as mdates
+    from matplotlib.font_manager import FontProperties
+
     # create a figure 
     fig = plt.figure()
     ax = fig.add_subplot(111)
