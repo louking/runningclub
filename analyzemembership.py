@@ -241,10 +241,10 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     if detailfile:
         _DETL.close()
     
-    # create an entry with 0 count for today's date, if none exists
+    # create an entry with 0 count for today's date, if none exists (use local time)
     # if, say, last entry was July 28, this will have the effect of prettying up the output
     # for full month rendering
-    today = timeu.epoch2dt(time.time())
+    today = timeu.epoch2dt(time.time()-time.timezone)
     thisyear = today.year
     thismonth = today.month
     thisday = today.day

@@ -122,8 +122,8 @@ def members2file(memberfileh, mapping, outfile=None, currentmembers=True):
 
         outfields.append(outfield)
 
-    # maybe check for current members
-    today = time.time()
+    # maybe check for current members (local time)
+    today = time.time()-time.timezone
 
     # create writeable list, csv file
     memberlist = wlist()
@@ -166,7 +166,8 @@ def _getdivision(member):
     :rtype: division text
     '''
 
-    today = time.time()
+    # use local time
+    today = time.time()-time.timezone
     todaydt = timeu.epoch2dt(today)
     jan1 = datetime(todaydt.year, 1, 1)
 
