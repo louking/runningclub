@@ -54,14 +54,14 @@ import version
 class invalidParameter(): pass
 
 #----------------------------------------------------------------------
-def membercount2json(ordyears,fname=None): 
+def membercount(ordyears,statsfile=None): 
 #----------------------------------------------------------------------
     '''
-    convert members added per day (ordyears) to membercount per day in json format
+    convert members added per day (ordyears) to membercount per day
     
     :param ordyears: return value from analyzemembership
-    :param fname: optional output file
-    :rtype: json conversion from ordyears
+    :param statsfile: optional json formatted output file (filename or file handle)
+    :rtype: OrderedDict - {year: {'date':'mm-dd', 'nummembers':count},...}, ...}
     '''
 
     # convert ordyears into something which can be read with json
@@ -85,13 +85,17 @@ def membercount2json(ordyears,fname=None):
             membercount[syear].append({'date':sdate,'nummembers':accumulated})
             thisdate = dd+oneday
 
-    membercountjson = json.dumps(membercount, indent=4, separators=(',', ': '))
+    if statsfile:
+        # maybe this is already an open file
+        membercountjson = json.dumps(membercount, indent=4, separators=(',', ': '))
+        if type(statsfile) == file:
+            statsfile.write(membercountjson)
+        # otherwise assume it is a file name
+        else:
+            with open(statsfile,'w') as outfile:
+                outfile.write(membercountjson)
 
-    if fname:
-        with open(fname,'w') as outfile:
-            outfile.write(membercountjson)
-
-    return membercountjson
+    return membercount
 
 #----------------------------------------------------------------------
 def members2file(memberfileh, mapping, outfile=None, currentmembers=True): 
@@ -194,15 +198,15 @@ def _getdivision(member):
 
 
 #----------------------------------------------------------------------
-def summarize(club, memberstatsfile, membersummaryfile, membershipfile=None):
+def _get_membershipfile(club, membershipfile=None, membercachefilename=None, update=False, debug=False):
 #----------------------------------------------------------------------
     '''
-    Summarize the membership stats and members for a given RunningAHEAD club.
-    If membershipfile is not supplied, retrieve the member data from RunningAHEAD
-    using the priviledged user token.
+    if membershipfile not supplied, retrieve from runningaheadmembers
 
-    :param club: club slug for RunningAHEAD
     :param membershipfile: filename, file handle, or list with member data (optional)
+    :param membercachefilename: name of optional file to cache detailed member data
+    :param update: update member cache based on latest information from RA
+    :rtype: membershipfile
     '''
 
     if not membershipfile:
@@ -212,15 +216,18 @@ def summarize(club, memberstatsfile, membersummaryfile, membershipfile=None):
         except apikey.unknownKey:
             raise parameterError, "'raprivuser' key needs to be configured using apikey"
 
-        membershipfile = ra2members(club, raprivuser, exp_date='ge.1990-01-01', ind_rec=1)
+        membershipfile = ra2members(club, raprivuser, membercachefilename=membercachefilename, update=update, debug=debug, exp_date='ge.1990-01-01', ind_rec=1)
 
-    # analyze the memberships
-    memberstats = analyzemembership(membershipfile)
+    return membershipfile
 
-    # generate json file with membership statistics
-    membercount2json(memberstats, memberstatsfile)
+#----------------------------------------------------------------------
+def _get_summary_mapping():
+#----------------------------------------------------------------------
+    '''
+    identify information in the output csv file for member summary, based
+    on input record data
+    '''
 
-    # generate members csv file with member information
     mapping = OrderedDict()
     mapping['First'] = 'fname'
     mapping['Last'] = 'lname'
@@ -229,6 +236,106 @@ def summarize(club, memberstatsfile, membersummaryfile, membershipfile=None):
     # for expiration date display convert yyyy-mm-dd to mm/dd/yyyy
     mapping['Expiration Date'] = lambda m: mdy.dt2asc(ymd.asc2dt(m.expiration))
 
+    return mapping
+
+#----------------------------------------------------------------------
+def summarize_memberstats(club, memberstatsfile=None, membershipfile=None, membercachefile=None, update=False, debug=False):
+#----------------------------------------------------------------------
+    '''
+    Summarize the membership stats for a given RunningAHEAD club.
+    If membershipfile is not supplied, retrieve the member data from RunningAHEAD
+    using the priviledged user token.
+
+    :param club: club slug for RunningAHEAD
+    :param memberstatsfile: optional output json file with member statistics
+    :param membershipfile: filename, file handle, or list with member data (optional)
+    :param membercachefilename: name of optional file to cache detailed member data
+    :param update: True if cache should be updated
+    :param debug: True for requests debugging
+
+    :rtype: see `:func:membercount`
+    '''
+    # parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub', version.__version__))
+    # parser.add_argument('club', help='club slug from RunningAHEAD')
+    # parser.add_argument('memberstatsfile', help='output file for membership stats (json)')
+    # parser.add_argument('--membershipfile', help='optional membership input file, individual records.  File headers match RunningAHEAD output', default=None)
+    # parser.add_argument('--membercachefile', help='optional membership cache filename', default=None)
+    # parser.add_argument('--update', help='specify to force update of member cache', action='store_true')
+    # parser.add_argument('--debug', help='turn on requests debugging', action='store_true')
+    # args = parser.parse_args()
+
+    # retrieve the membershipfile if not provided
+    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefile, update=update, debug=debug)
+
+    # analyze the memberships
+    memberstats = analyzemembership(membershipfile)
+
+    # generate json data with membership statistics
+    membercounts = membercount(memberstats, memberstatsfile)
+
+    return membercounts
+
+#----------------------------------------------------------------------
+def summarize_membersinfo(club, membersummaryfile=None, membershipfile=None, membercachefile=None, update=False, debug=False):
+#----------------------------------------------------------------------
+    '''
+    Summarize the members for a given RunningAHEAD club.
+    If membershipfile is not supplied, retrieve the member data from RunningAHEAD
+    using the priviledged user token.
+
+    :param club: club slug for RunningAHEAD
+    :param membersummaryfile: optional output csv file with summarized member information
+    :param membershipfile: filename, file handle, or list with member data (optional)
+    :param membercachefilename: name of optional file to cache detailed member data
+    :param update: True if cache should be updated
+    :param debug: True for requests debugging
+    :rtype: csv formatted list of member records, with file header
+    '''
+    # parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub', version.__version__))
+    # parser.add_argument('club', help='club slug from RunningAHEAD')
+    # parser.add_argument('membersummaryfile', help='output file for member summary (csv)')
+    # parser.add_argument('--membershipfile', help='optional membership input file, individual records.  File headers match RunningAHEAD output', default=None)
+    # parser.add_argument('--membercachefile', help='optional membership cache filename', default=None)
+    # parser.add_argument('--update', help='specify to force update of member cache', action='store_true')
+    # parser.add_argument('--debug', help='turn on requests debugging', action='store_true')
+    # args = parser.parse_args()
+
+    # retrieve the membershipfile if not provided
+    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefile, update=update, debug=debug)
+
+    # generate members csv file with member information
+    mapping = _get_summary_mapping()
+    memberlist = members2file(membershipfile, mapping, membersummaryfile)
+
+    return memberlist
+
+#----------------------------------------------------------------------
+def summarize(club, memberstatsfile, membersummaryfile, membershipfile=None, membercachefilename=None, update=False, debug=False):
+#----------------------------------------------------------------------
+    '''
+    Summarize the membership stats and members for a given RunningAHEAD club.
+    If membershipfile is not supplied, retrieve the member data from RunningAHEAD
+    using the priviledged user token.
+
+    :param club: club slug for RunningAHEAD
+    :param memberstatsfile: output json file with member statistics
+    :param membersummaryfile: output csv file with summarized member information
+    :param membershipfile: filename, file handle, or list with member data (optional)
+    :param membercachefilename: name of optional file to cache detailed member data
+    :param update: True if cache should be updated
+    :param debug: True for requests debugging
+    '''
+    # retrieve the membershipfile if not provided
+    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefilename, update=update, debug=debug)
+
+    # analyze the memberships
+    memberstats = analyzemembership(membershipfile)
+
+    # generate json file with membership statistics
+    membercount(memberstats, memberstatsfile)
+
+    # generate members csv file with member information
+    mapping = _get_summary_mapping()
     members2file(membershipfile, mapping, membersummaryfile)
 
     # for debugging
@@ -241,15 +348,18 @@ def main():
     '''
     summarize members
     '''
-    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub',version.__version__))
-    parser.add_argument('club',help='club slug from RunningAHEAD')
-    parser.add_argument('memberstatsfile',help='output file for membership stats (json)')
-    parser.add_argument('membersummaryfile',help='output file for member summary (csv)')
-    parser.add_argument('--membershipfile',help='optional membership file, individual records.  File headers match RunningAHEAD output',default=None)
+    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub', version.__version__))
+    parser.add_argument('club', help='club slug from RunningAHEAD')
+    parser.add_argument('memberstatsfile', help='output file for membership stats (json)')
+    parser.add_argument('membersummaryfile', help='output file for member summary (csv)')
+    parser.add_argument('--membershipfile', help='optional membership input file, individual records.  File headers match RunningAHEAD output', default=None)
+    parser.add_argument('--membercachefile', help='optional membership cache filename', default=None)
+    parser.add_argument('--update', help='specify to force update of member cache', action='store_true')
+    parser.add_argument('--debug', help='turn on requests debugging', action='store_true')
     args = parser.parse_args()
     
     # summarize membership
-    summarize(args.club, args.memberstatsfile, args.membersummaryfile, args.membershipfile)
+    summarize(args.club, args.memberstatsfile, args.membersummaryfile, membershipfile=args.membershipfile, membercachefilename=args.membercachefile, update=args.update, debug=args.debug)
     
 # ##########################################################################################
 #   __main__
