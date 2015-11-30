@@ -84,7 +84,7 @@ setup(
             'agegrade = runningclub.agegrade:main',
             'analyzeeventmembers = runningclub.analyzeeventmembers:main',
             'analyzemembership = runningclub.analyzemembership:main',
-            'eventmerchandise2order.py = runningclub.eventmerchandise2order.py:main',
+            'eventmerchandise2order = runningclub.eventmerchandise2order:main',
             'exportresults = runningclub.exportresults:main',
             'genagtables = runningclub.genagtables:main',
             'getresultsmembers = runningclub.getresultsmembers:main',
