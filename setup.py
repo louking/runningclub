@@ -41,7 +41,7 @@ setup(
     packages = find_packages(),
 #    include_package_data = True,
     scripts = [
-        'runningclub/agegrade.py',
+        # 'runningclub/agegrade.py', -- moved to loutilities
         'runningclub/analyzeeventmembers.py',
         'runningclub/analyzemembership.py',
         'runningclub/eventmerchandise2order.py',
@@ -81,7 +81,7 @@ setup(
 
     entry_points = {
         'console_scripts': [
-            'agegrade = runningclub.agegrade:main',
+            # 'agegrade = runningclub.agegrade:main', -- moved to loutilities
             'analyzeeventmembers = runningclub.analyzeeventmembers:main',
             'analyzemembership = runningclub.analyzemembership:main',
             'eventmerchandise2order = runningclub.eventmerchandise2order:main',

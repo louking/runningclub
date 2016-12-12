@@ -35,7 +35,7 @@ import csv
 # home grown
 import version
 from render import rendertime
-from agegrade import AgeGrade
+from loutilities.agegrade import AgeGrade
 
 # distances in miles
 METERSINMILE = 1609.0   # short distance corrects mistake in ag spreadsheet
@@ -89,6 +89,7 @@ def genagtables(gen,agpcs,ages):
             
             # generate each result
             for dist in DISTTBL.keys():
+                # if this fails, need to copy result from runningclub.agegrade to loutilities.agegrade
                 thistime = rendertime(ag.result(age,gen,DISTTBL[dist],agpc),0, useceiling=False, usefloor=True)
                 
                 # make sure format is h:m:s
