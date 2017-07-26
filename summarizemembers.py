@@ -198,7 +198,7 @@ def _getdivision(member):
 
 
 #----------------------------------------------------------------------
-def _get_membershipfile(club, membershipfile=None, membercachefilename=None, update=False, debug=False):
+def _get_membershipfile(club, membershipfile=None, membercachefilename=None, update=False, debug=False, raprivuser=None, key=None, secret=None):
 #----------------------------------------------------------------------
     '''
     if membershipfile not supplied, retrieve from runningaheadmembers
@@ -206,17 +206,22 @@ def _get_membershipfile(club, membershipfile=None, membercachefilename=None, upd
     :param membershipfile: filename, file handle, or list with member data (optional)
     :param membercachefilename: name of optional file to cache detailed member data
     :param update: update member cache based on latest information from RA
+    :param debug: True for debugging, default False
+    :param raprivuser: hash for RA user with privileges for indicated club, if not supplied retrieved from apikeys
+    :param key: ra key for oauth, if omitted retrieved from apikey
+    :param secret: ra secret for oauth, if omitted retrieved from apikey
     :rtype: membershipfile
     '''
 
     if not membershipfile:
-        ak = apikey.ApiKey('Lou King','running')
-        try:
-            raprivuser = ak.getkey('raprivuser')
-        except apikey.unknownKey:
-            raise parameterError, "'raprivuser' key needs to be configured using apikey"
+        if not raprivuser:
+            ak = apikey.ApiKey('Lou King','running')
+            try:
+                raprivuser = ak.getkey('raprivuser')
+            except apikey.unknownKey:
+                raise parameterError, "'raprivuser' key needs to be configured using apikey"
 
-        membershipfile = ra2members(club, raprivuser, membercachefilename=membercachefilename, update=update, debug=debug, exp_date='ge.1990-01-01', ind_rec=1)
+        membershipfile = ra2members(club, raprivuser, membercachefilename=membercachefilename, update=update, debug=debug, key=key, secret=secret, exp_date='ge.1990-01-01', ind_rec=1)
 
     return membershipfile
 
@@ -239,7 +244,7 @@ def _get_summary_mapping():
     return mapping
 
 #----------------------------------------------------------------------
-def summarize_memberstats(club, memberstatsfile=None, membershipfile=None, membercachefile=None, update=False, debug=False):
+def summarize_memberstats(club, memberstatsfile=None, membershipfile=None, membercachefile=None, update=False, debug=False, raprivuser=None, key=None, secret=None):
 #----------------------------------------------------------------------
     '''
     Summarize the membership stats for a given RunningAHEAD club.
@@ -252,6 +257,9 @@ def summarize_memberstats(club, memberstatsfile=None, membershipfile=None, membe
     :param membercachefilename: name of optional file to cache detailed member data
     :param update: True if cache should be updated
     :param debug: True for requests debugging
+    :param raprivuser: hash for RA user with privileges for indicated club, if not supplied retrieved from apikeys
+    :param key: ra key for oauth, if omitted retrieved from apikey
+    :param secret: ra secret for oauth, if omitted retrieved from apikey
 
     :rtype: see `:func:membercount`
     '''
@@ -265,7 +273,7 @@ def summarize_memberstats(club, memberstatsfile=None, membershipfile=None, membe
     # args = parser.parse_args()
 
     # retrieve the membershipfile if not provided
-    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefile, update=update, debug=debug)
+    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefile, update=update, debug=debug, raprivuser=raprivuser, key=key, secret=secret)
 
     # analyze the memberships
     memberstats = analyzemembership(membershipfile)
@@ -276,7 +284,7 @@ def summarize_memberstats(club, memberstatsfile=None, membershipfile=None, membe
     return membercounts
 
 #----------------------------------------------------------------------
-def summarize_membersinfo(club, membersummaryfile=None, membershipfile=None, membercachefile=None, update=False, debug=False):
+def summarize_membersinfo(club, membersummaryfile=None, membershipfile=None, membercachefile=None, update=False, debug=False, raprivuser=None, key=None, secret=None):
 #----------------------------------------------------------------------
     '''
     Summarize the members for a given RunningAHEAD club.
@@ -289,6 +297,9 @@ def summarize_membersinfo(club, membersummaryfile=None, membershipfile=None, mem
     :param membercachefilename: name of optional file to cache detailed member data
     :param update: True if cache should be updated
     :param debug: True for requests debugging
+    :param raprivuser: hash for RA user with privileges for indicated club, if not supplied retrieved from apikeys
+    :param key: ra key for oauth, if omitted retrieved from apikey
+    :param secret: ra secret for oauth, if omitted retrieved from apikey
     :rtype: csv formatted list of member records, with file header
     '''
     # parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub', version.__version__))
@@ -301,7 +312,7 @@ def summarize_membersinfo(club, membersummaryfile=None, membershipfile=None, mem
     # args = parser.parse_args()
 
     # retrieve the membershipfile if not provided
-    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefile, update=update, debug=debug)
+    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefile, update=update, debug=debug, raprivuser=raprivuser, key=key, secret=secret)
 
     # generate members csv file with member information
     mapping = _get_summary_mapping()
@@ -310,7 +321,7 @@ def summarize_membersinfo(club, membersummaryfile=None, membershipfile=None, mem
     return memberlist
 
 #----------------------------------------------------------------------
-def summarize(club, memberstatsfile, membersummaryfile, membershipfile=None, membercachefilename=None, update=False, debug=False):
+def summarize(club, memberstatsfile, membersummaryfile, membershipfile=None, membercachefilename=None, update=False, debug=False, configfile=None):
 #----------------------------------------------------------------------
     '''
     Summarize the membership stats and members for a given RunningAHEAD club.
@@ -324,9 +335,26 @@ def summarize(club, memberstatsfile, membersummaryfile, membershipfile=None, mem
     :param membercachefilename: name of optional file to cache detailed member data
     :param update: True if cache should be updated
     :param debug: True for requests debugging
+    :param configfile: optional configuration filename
     '''
+
+    # configuration file supplied -- pull credentials from the app section
+    if configfile:
+        from loutilities.configparser import getitems
+        appconfig = getitems(configfile, 'app')
+        raprivuser = appconfig['RAPRIVUSER']
+        rakey = appconfig['RAKEY']
+        rasecret = appconfig['RASECRET']
+    
+    # no configuration file, the credentials should be retrieved with loutilities.apikey
+    else:
+        raprivuser = None
+        rakey = None
+        rasecret = None
+
+
     # retrieve the membershipfile if not provided
-    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefilename, update=update, debug=debug)
+    membershipfile = _get_membershipfile(club, membershipfile=membershipfile, membercachefilename=membercachefilename, update=update, debug=debug, raprivuser=raprivuser, key=rakey, secret=rasecret)
 
     # analyze the memberships
     memberstats = analyzemembership(membershipfile)
@@ -354,12 +382,13 @@ def main():
     parser.add_argument('membersummaryfile', help='output file for member summary (csv)')
     parser.add_argument('--membershipfile', help='optional membership input file, individual records.  File headers match RunningAHEAD output', default=None)
     parser.add_argument('--membercachefile', help='optional membership cache filename', default=None)
+    parser.add_argument('--configfile', help='optional configuration filename', default=None)
     parser.add_argument('--update', help='specify to force update of member cache', action='store_true')
     parser.add_argument('--debug', help='turn on requests debugging', action='store_true')
     args = parser.parse_args()
     
     # summarize membership
-    summarize(args.club, args.memberstatsfile, args.membersummaryfile, membershipfile=args.membershipfile, membercachefilename=args.membercachefile, update=args.update, debug=args.debug)
+    summarize(args.club, args.memberstatsfile, args.membersummaryfile, membershipfile=args.membershipfile, membercachefilename=args.membercachefile, update=args.update, debug=args.debug, configfile=args.configfile)
     
 # ##########################################################################################
 #   __main__
