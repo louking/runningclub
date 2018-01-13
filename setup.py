@@ -59,6 +59,7 @@ setup(
         'runningclub/renderrace.py',
         'runningclub/renderstandings.py',
         'runningclub/summarizemembers.py',
+        'runningclub/summarizemembers_rsu.py',
     ],
 
     # Project uses reStructuredText, so ensure that the docutils get
@@ -99,6 +100,7 @@ setup(
             'renderrace = runningclub.renderrace:main',
             'renderstandings = runningclub.renderstandings:main',
             'summarizemembers = runningclub.summarizemembers:main',
+            'summarizemembers_rsu = runningclub.summarizemembers_rsu:main',
         ],
     },
 
