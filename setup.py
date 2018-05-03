@@ -60,6 +60,7 @@ setup(
         'runningclub/renderstandings.py',
         'runningclub/summarizemembers.py',
         'runningclub/summarizemembers_rsu.py',
+        'runningclub/mailchimpimport_rsu.py',
     ],
 
     # Project uses reStructuredText, so ensure that the docutils get
@@ -101,6 +102,7 @@ setup(
             'renderstandings = runningclub.renderstandings:main',
             'summarizemembers = runningclub.summarizemembers:main',
             'summarizemembers_rsu = runningclub.summarizemembers_rsu:main',
+            'mailchimpimport_rsu = runningclub.mailchimpimport_rsu:main',
         ],
     },
 
