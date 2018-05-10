@@ -25,9 +25,11 @@
 import logging
 import argparse
 from hashlib import md5
+import json
 
 # pypi
 from mailchimp3 import MailChimp
+from mailchimp3.mailchimpclient import MailChimpError
 
 # homegrown
 from running.runsignup import RunSignUp
@@ -179,7 +181,7 @@ def importmembers(configfile, debug=False, stats=False):
     for rsumember in rsumembers:
         memberrec = {}
         xform.transform(rsumember, memberrec)
-        memberkey = memberrec['email']
+        memberkey = memberrec['email'].lower()
         # only save if there's an email address
         # the primary member takes precedence, but if different email for nonprimary members save those as well
         if memberkey and (memberrec['primary'] or memberkey not in rsucurrmembers):
@@ -247,7 +249,9 @@ def importmembers(configfile, debug=False, stats=False):
         mcmembers[mcmember['id']] = mcmember
 
     # collect some stats
-    stat = Stat(['addedtolist', 'newmemberunsubscribed', 'newmember', 'pastmember', 'nonmember'])
+    stat = Stat(['addedtolist', 'newmemberunsubscribed', 'newmember', 'pastmember', 
+                'nonmember', 'memberunsubscribedskipped', 'membercleanedskipped',
+                'mailchimperror'])
 
     # loop through club members
     # if club member is in mailchimp
@@ -274,9 +278,18 @@ def importmembers(configfile, debug=False, stats=False):
                         client.lists.members.update(list_id=list_id, subscriber_hash=mcmemberid, data={'interests' : mcapi.newmember})
                         stat.newmember += 1
                     # if unsubscribed, subscribe them to member stuff, but remove everything else
+                    elif mcmember['status'] == 'unsubscribed':
+                        try:
+                            client.lists.members.update(list_id=list_id, subscriber_hash=mcmemberid, data={'interests' : mcapi.unsubscribed, 'status' : 'subscribed'})
+                            stat.newmemberunsubscribed += 1
+                        # MailChimp won't let us resubscribe this member
+                        except MailChimpError as e:
+                            thislogger.info('member unsubscribed, skipped: {}'.format(clubmember['email']))
+                            stat.memberunsubscribedskipped += 1
+                    # other statuses are skipped
                     else:
-                        client.lists.members.update(list_id=list_id, subscriber_hash=mcmemberid, data={'interests' : mcapi.unsubscribed, 'status' : 'subscribed'})
-                        stat.newmemberunsubscribed += 1
+                        thislogger.info('member cleaned, skipped: {}'.format(clubmember['email']))
+                        stat.membercleanedskipped += 1;
                 # past member, recall what they had set before for the member stuff
                 else:
                     pastmemberinterests = merge_dicts({ groups[gname] : mcmember['interests'][shadowgroups[gname]] for gname in shadowgroups.keys() }, 
@@ -286,14 +299,20 @@ def importmembers(configfile, debug=False, stats=False):
 
         # if club member is missing from mailchimp
         else:
-            client.lists.members.create(list_id=list_id, 
-                                        data={
-                                            'email_address' : clubmember['email'],
-                                            'merge_fields'  : {'FNAME' : clubmember['first'], 'LNAME' : clubmember['last'] },
-                                            'interests'     : mcapi.newmember,
-                                            'status'        : 'subscribed'
-                                        })
-            stat.addedtolist += 1
+            try:
+                client.lists.members.create(list_id=list_id, 
+                                            data={
+                                                'email_address' : clubmember['email'],
+                                                'merge_fields'  : {'FNAME' : clubmember['first'], 'LNAME' : clubmember['last'] },
+                                                'interests'     : mcapi.newmember,
+                                                'status'        : 'subscribed'
+                                            })
+                stat.addedtolist += 1
+
+            except MailChimpError as e:
+                ed = e.args[0]
+                thislogger.warning('MailChimpError {} for {}: {}'.format(ed['title'], clubmember['email'], ed['detail']))
+                stat.mailchimperror += 1
 
     # at this point, mcmembers have only those enrollees who are not in the club
     # loop through each of these and make sure club only interests are removed
