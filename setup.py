@@ -61,6 +61,7 @@ setup(
         'runningclub/summarizemembers.py',
         'runningclub/summarizemembers_rsu.py',
         'runningclub/mailchimpimport_rsu.py',
+        'runningclub/results_ag_analysis.py',
     ],
 
     # Project uses reStructuredText, so ensure that the docutils get
@@ -103,6 +104,7 @@ setup(
             'summarizemembers = runningclub.summarizemembers:main',
             'summarizemembers_rsu = runningclub.summarizemembers_rsu:main',
             'mailchimpimport_rsu = runningclub.mailchimpimport_rsu:main',
+            'results_ag_analysis = runningclub.results_ag_analysis:main',
         ],
     },
 
