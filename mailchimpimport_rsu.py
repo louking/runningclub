@@ -154,6 +154,8 @@ def importmembers(configfile, debug=False, stats=False):
     mcshadowcategory      = mcconfig['MC_SHADOWCATEGORY']
     mcpastmembergroupname = mcconfig['MC_PASTMEMBERGROUP']
     mccurrmembergroupname = mcconfig['MC_CURRMEMBERGROUP']
+    mctimeout             = float(mcconfig['MC_TIMEOUT'])
+
 
     # use Transform to simplify RunSignUp format
     xform = Transform( {
@@ -196,7 +198,7 @@ def importmembers(configfile, debug=False, stats=False):
 
     
     # download categories / groups from MailChimp
-    client = MailChimp(mc_api=mckey, timeout=10.0)
+    client = MailChimp(mc_api=mckey, timeout=mctimeout)
     lists = client.lists.all(get_all=True, fields="lists.name,lists.id")
     list_id = [lst['id'] for lst in lists['lists'] if lst['name'] == mclist][0]
     categories = client.lists.interest_categories.all(list_id=list_id,fields="categories.title,categories.id")
