@@ -30,11 +30,12 @@ import version
 class parameterError(Exception): pass
 
 # ----------------------------------------------------------------------
-def analyzemultimembers(membercachefile, multifile=None):
+def analyzemultimembers(membercachefile, multifile):
     # ----------------------------------------------------------------------
     multimembers = {}
     multimemberdata = {}
     multimembersinglecnt = 0
+    multimembershiptypes = ['Family', 'Two in Household', 'Individual + Junior']
 
     with open(membercachefile, 'r') as memfile:
         today = datetime.now()
@@ -42,9 +43,7 @@ def analyzemultimembers(membercachefile, multifile=None):
         for memberrec in cachedmembers:
             enddate = ymd.asc2dt(memberrec['ExpirationDate'])
 
-            if (((memberrec['MembershipType'] == "Family") or
-                (memberrec['MembershipType'] == "Two in Household") or
-                (memberrec['MembershipType'] == "Individual + Junior")) and
+            if (memberrec['MembershipType'] in multimembershiptypes and
                 (enddate >= today)):
                 if ((memberrec['MembershipID']) in multimembers):
                     multimembers[memberrec['MembershipID']] += 1
@@ -56,17 +55,17 @@ def analyzemultimembers(membercachefile, multifile=None):
 
     if multifile:
         with open(multifile, 'w', newline='') as multif:
-            cachehdr = 'MemberID,MembershipID,MembershipType,FamilyName,GivenName,MiddleName,Gender,DOB,Email,PrimaryMember,JoinDate,ExpirationDate,LastModified'.split(
+            multireporthdr = 'MemberID,MembershipID,MembershipType,FamilyName,GivenName,MiddleName,Gender,DOB,Email,PrimaryMember,JoinDate,ExpirationDate,LastModified'.split(
                 ',')
-            cache = DictWriter(multif, cachehdr)
-            cache.writeheader()
+            multireport = DictWriter(multif, multireporthdr)
+            multireport.writeheader()
             for memberid, memberCnt in multimembers.items():
                 if memberCnt == 1:
                     multimembersinglecnt += 1
                     # find the member record that corresponds to memberid
                     memberrec = multimemberdata[memberid]
                     if (memberrec):
-                        cache.writerow(memberrec)
+                        multireport.writerow(memberrec)
 
     return multimembersinglecnt
 
@@ -94,7 +93,7 @@ def summarize(configfile, debug=False):
 #    members = updatemembercache(club, membercachefile, key=key, secret=secret, debug=debug)
 
     # analyze the memberships for multi-person memberships with only one member
-    multicount = analyzemultimembers(membercachefile, multifile=membermultifile)
+    multicount = analyzemultimembers(membercachefile, membermultifile)
 
     # for debugging
     #    return members, memberstats
