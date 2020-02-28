@@ -33,8 +33,8 @@ from collections import OrderedDict
 import csv
 
 # home grown
-import version
-from render import rendertime
+from . import version
+from .render import rendertime
 from loutilities.agegrade import AgeGrade
 
 # distances in miles
@@ -75,10 +75,10 @@ def genagtables(gen,agpcs,ages):
     for agpc in agpcs:
         # open file and output heading rows
         fn = 'results-for-age-grade-{}-{}.csv'.format(gen,agpc)
-        F = open(fn,'wb')
+        F = open(fn,'w',newline='')
         F.write('Required Results for Age Grade {} {}%\n'.format(GEN[gen],agpc))
         F.write('\n')
-        hdr = ['age'] + DISTTBL.keys()
+        hdr = ['age'] + list(DISTTBL.keys())
         C = csv.DictWriter(F,hdr)
         C.writeheader()
         
@@ -88,7 +88,7 @@ def genagtables(gen,agpcs,ages):
             row['age'] = age
             
             # generate each result
-            for dist in DISTTBL.keys():
+            for dist in list(DISTTBL.keys()):
                 # if this fails, need to copy result from runningclub.agegrade to loutilities.agegrade
                 thistime = rendertime(ag.result(age,gen,DISTTBL[dist],agpc),0, useceiling=False, usefloor=True)
                 
@@ -121,8 +121,8 @@ def main():
     
     # TBD - add error checking for agpcrange and agerange
 
-    agpcs = range(agpcrange[0],agpcrange[1]+1)
-    ages = range(agerange[0],agerange[1]+args.step, args.step)
+    agpcs = list(range(agpcrange[0],agpcrange[1]+1))
+    ages = list(range(agerange[0],agerange[1]+args.step, args.step))
     
     genagtables(args.gender,agpcs,ages)
     

@@ -39,9 +39,9 @@ import math
 # other
 
 # home grown
-import version
-import racedb
-from config import softwareError
+from . import version
+from . import racedb
+from .config import softwareError
 from loutilities import timeu
 
 DBDATEFMT = racedb.DBDATEFMT
@@ -166,7 +166,7 @@ def rendertime(dbtime,precision,useceiling=True,usefloor=False):
         
         # retttime should have leading 0.  remove it
         if rettime[0] != '0':
-            raise softwareError,'formatted adjusted time fraction does not have leading 0: {0}'.format(adjtime)
+            raise softwareError('formatted adjusted time fraction does not have leading 0: {0}'.format(adjtime))
         rettime = rettime[1:]
         
     else:

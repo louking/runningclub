@@ -38,7 +38,7 @@ import re
 # github
 
 # home grown
-import version
+from . import version
 
 
 class parameterError(Exception): pass
@@ -58,12 +58,12 @@ def main():
 
     # check input filename
     if merchandisefile[-4:] != '.csv':
-        raise parameterError, 'invalid filename {}, must be .csv file'.format(merchandisefile)
+        raise parameterError('invalid filename {}, must be .csv file'.format(merchandisefile))
 
     # open input file, output file, and process them
-    with open(merchandisefile,'rb') as _PARTICIPANTS, \
-            open('{}-order.csv'.format(merchandisefile[:-4]),'wb') as _ORDERS, \
-            open('{}-label.csv'.format(merchandisefile[:-4]),'wb') as _LABELS:
+    with open(merchandisefile,'r',newline='') as _PARTICIPANTS, \
+            open('{}-order.csv'.format(merchandisefile[:-4]),'w',newline='') as _ORDERS, \
+            open('{}-label.csv'.format(merchandisefile[:-4]),'w',newline='') as _LABELS:
         PARTICIPANTS = csv.DictReader(_PARTICIPANTS)
         orderheadings = 'customer,email,product,size,count'.split(',')
         ORDERS = csv.DictWriter(_ORDERS,orderheadings)
@@ -92,7 +92,7 @@ def main():
                 products[field] = {'product':product, 'size':size}
 
         # these are the interesting headings from the participants file
-        product_fields = products.keys()
+        product_fields = list(products.keys())
 
         # convert event participants file to order file
         for participant in PARTICIPANTS:

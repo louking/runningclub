@@ -75,7 +75,7 @@ class RaceFile():
         str_attrs = ['order by']
         for rowndx in range(1,nrows):
             thisrow_list = series_sheet.row_values(rowndx)
-            thisrow_dict = dict(zip(serieshdr,thisrow_list))
+            thisrow_dict = dict(list(zip(serieshdr,thisrow_list)))
             thisseries = thisrow_dict.pop('series')
             # any string attribute which starts with 'Y' or 'y' is True, otherwise False
             # numeric attributes are all integers
@@ -102,7 +102,7 @@ class RaceFile():
         nrows = races_sheet.nrows
         for rowndx in range(1,nrows):
             thisrow_list = races_sheet.row_values(rowndx)
-            thisrow_dict = dict(zip(raceshdr,thisrow_list))
+            thisrow_dict = dict(list(zip(raceshdr,thisrow_list)))
 
             # series are indicated in the file, delimited by ','
             thisrace_series = []
@@ -127,7 +127,7 @@ class RaceFile():
         nrows = divisions_sheet.nrows
         for rowndx in range(1,nrows):
             thisrow_list = divisions_sheet.row_values(rowndx)
-            thisrow_dict = dict(zip(divisionshdr,thisrow_list))
+            thisrow_dict = dict(list(zip(divisionshdr,thisrow_list)))
 
             series = thisrow_dict['series']
             lowage = int(thisrow_dict['age-low'])

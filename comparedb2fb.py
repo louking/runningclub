@@ -37,9 +37,9 @@ import csv
 import difflib
 
 # home grown
-import version
-import racedb
-import clubmember
+from . import version
+from . import racedb
+from . import clubmember
 
 # SequenceMatcher to determine matching ratio, which can be used to evaluate CUTOFF value
 sm = difflib.SequenceMatcher()
@@ -109,7 +109,7 @@ def main():
         fbmembers_json += line
     
     # convert to unicode, ignoring non-ascii characters
-    fbmembers_json = unicode(fbmembers_json,'ascii','ignore')
+    fbmembers_json = str(fbmembers_json,'ascii','ignore')
     
     # convert fbmembers to dict, then to list
     fbmembers_dict = json.loads(fbmembers_json)
@@ -123,18 +123,18 @@ def main():
     else:
         racedbfile = racedb.getdbfilename()
     active = clubmember.DbClubMember(racedbfile,cutoff=args.cutoff,member=True,active=True)
-    dbmembers = active.getmembers().keys()
+    dbmembers = list(active.getmembers().keys())
     # note dbmembers already lower case
     
     # some stats
-    print 'number in database = {}'.format(len(dbmembers))
-    print 'number on facebook = {}'.format(len(fbmembers))
+    print('number in database = {}'.format(len(dbmembers)))
+    print('number on facebook = {}'.format(len(fbmembers)))
     
     # open output files to render members of each list not found in other list
     MATCH = open('comparedb2fb-match.txt','w')
     FBXTRA = open('comparedb2fb-fbbutnotdb.txt','w')
     DBXTRA = open('comparedb2fb-dbbutnotfb.txt','w')
-    _CLOSE =  open('comparedb2fb-close.csv','wb')
+    _CLOSE =  open('comparedb2fb-close.csv','w',newline='')
     CLOSE = csv.DictWriter(_CLOSE,['database','facebook','ratio'])
     CLOSE.writeheader()
     

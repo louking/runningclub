@@ -40,7 +40,7 @@ import types
 # home grown
 from running.runningaheadmembers import RunningAheadMembers
 from running.ra2membersfile import ra2members
-from analyzemembership import analyzemembership
+from .analyzemembership import analyzemembership
 from running.ra2membersfile import ra2members
 from loutilities import timeu
 ymd = timeu.asctime('%Y-%m-%d')
@@ -49,7 +49,7 @@ md = timeu.asctime('%m-%d')
 from loutilities.csvwt import wlist
 from loutilities import apikey
 
-import version
+from . import version
 
 class invalidParameter(): pass
 
@@ -88,7 +88,7 @@ def membercount(ordyears,statsfile=None):
     if statsfile:
         # maybe this is already an open file
         membercountjson = json.dumps(membercount, indent=4, separators=(',', ': '))
-        if type(statsfile) == file:
+        if isinstance(statsfile, file):
             statsfile.write(membercountjson)
         # otherwise assume it is a file name
         else:
@@ -121,8 +121,8 @@ def members2file(memberfileh, mapping, outfile=None, currentmembers=True):
     for outfield in mapping:
         invalue = mapping[outfield]
 
-        if type(invalue) not in [str,unicode] and not callable(invalue):
-            raise invalidParameter, 'invalid mapping {}. mapping values must be str or function'.format(outvalue)
+        if type(invalue) not in [str,str] and not callable(invalue):
+            raise invalidParameter('invalid mapping {}. mapping values must be str or function'.format(outvalue))
 
         outfields.append(outfield)
 
@@ -142,7 +142,7 @@ def members2file(memberfileh, mapping, outfile=None, currentmembers=True):
         outrow = {}
         for outfield in mapping:
             infield = mapping[outfield]
-            if type(infield) == str:
+            if isinstance(infield, str):
                 outvalue = getattr(thismember, infield, None)
 
             else:
@@ -155,7 +155,7 @@ def members2file(memberfileh, mapping, outfile=None, currentmembers=True):
 
     # write file if desired
     if outfile:
-        with open(outfile,'wb') as out:
+        with open(outfile,'w',newline='') as out:
             out.writelines(memberlist)
 
     return memberlist
@@ -219,7 +219,7 @@ def _get_membershipfile(club, membershipfile=None, membercachefilename=None, upd
             try:
                 raprivuser = ak.getkey('raprivuser')
             except apikey.unknownKey:
-                raise parameterError, "'raprivuser' key needs to be configured using apikey"
+                raise parameterError("'raprivuser' key needs to be configured using apikey")
 
         membershipfile = ra2members(club, raprivuser, membercachefilename=membercachefilename, update=update, debug=debug, key=key, secret=secret, exp_date='ge.1990-01-01', ind_rec=1)
 

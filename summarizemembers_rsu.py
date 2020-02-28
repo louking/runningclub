@@ -33,7 +33,6 @@ import time
 
 # homegrown
 from running.runsignup import RunSignUp, updatemembercache
-from loutilities.csvwt import wlist
 from loutilities.configparser import getitems
 
 from loutilities import timeu
@@ -41,7 +40,6 @@ ymd = timeu.asctime('%Y-%m-%d')
 mdy = timeu.asctime('%m/%d/%Y')
 md = timeu.asctime('%m-%d')
 
-import version
 
 class parameterError(Exception): pass
 
@@ -51,7 +49,7 @@ def analyzemembership(membercachefile, statsfile=None):
     # stats will be unordered dict {year1: {date1:count1, date2:count2...}, year2: {...}, ... }
     stats = {}
 
-    with open(membercachefile, 'rb') as memfile:
+    with open(membercachefile, 'r', newline='') as memfile:
         # for each member/membership, add 1 for every date the membership represents
         # only go through today
         today = datetime.now()
@@ -74,19 +72,17 @@ def analyzemembership(membercachefile, statsfile=None):
     # for year in years:
     #     ordstats[year] = OrderedDict(sorted(stats[year].items(), key=lambda t: t[0]))
 
-    years = stats.keys()
-    years.sort()
+    years = sorted(list(stats.keys()))
     statslist = []
     for year in years:
         yearcounts = {'year' : year, 'counts' : [] }
-        datecounts = stats[year].keys()
-        datecounts.sort()
+        datecounts = sorted(list(stats[year].keys()))
         for date in datecounts:
             yearcounts['counts'].append( { 'date' : date, 'count' : stats[year][date] } )
         statslist.append( yearcounts )
 
     if statsfile:
-        with open(statsfile, 'wb') as statsf:
+        with open(statsfile, 'w') as statsf:
             statsjson = dumps(statslist, indent=4, sort_keys=True, separators=(',', ': '))
             statsf.write(statsjson)
 
@@ -137,8 +133,11 @@ def main():
     CACHEFILE: 'input/output csv file which caches individual membership dates'
     STATSFILE: 'output json file which will receive daily member count statistics'
     '''
-    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub', version.__version__))
+    from runningclub.version import __version__
+
+    parser = argparse.ArgumentParser(prog='runningclub')
     parser.add_argument('configfile', help='configuration filename', default=None)
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s {}'.format(__version__))
     parser.add_argument('--debug', help='turn on requests debugging', action='store_true')
     args = parser.parse_args()
     

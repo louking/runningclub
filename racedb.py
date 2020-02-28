@@ -56,9 +56,9 @@ from sqlalchemy.orm import sessionmaker, object_mapper, relationship, backref
 Session = sessionmaker()    # create sqalchemy Session class
 
 # home grown
-from config import CF,SECCF,OPTUSERPWAPI,OPTCLUBABBREV,OPTDBTYPE,OPTDBSERVER,OPTDBNAME,OPTDBGLOBUSER,OPTUNAME,KF,SECKEY,OPTPRIVKEY
-import userpw
-import version
+from .config import CF,SECCF,OPTUSERPWAPI,OPTCLUBABBREV,OPTDBTYPE,OPTDBSERVER,OPTDBNAME,OPTDBGLOBUSER,OPTUNAME,KF,SECKEY,OPTPRIVKEY
+from . import userpw
+from . import version
 from loutilities import timeu
 
 DBDATEFMT = '%Y-%m-%d'
@@ -170,7 +170,7 @@ def getunique(session, model, **kwargs):
 
     # error if query returned multiple rows when it was supposed to be unique
     if len(instances) > 1:
-        raise dbConsistencyError, 'found multiple rows in {0} for {1}'.format(model,kwargs)
+        raise dbConsistencyError('found multiple rows in {0} for {1}'.format(model,kwargs))
     
     if len(instances) == 0:
         return None
@@ -273,7 +273,7 @@ class Runner(Base):
             else:
                 dateofbirth = ''
         except ValueError:
-            raise parameterError, 'invalid dateofbirth {0}'.format(dateofbirth)
+            raise parameterError('invalid dateofbirth {0}'.format(dateofbirth))
         
         self.name = name
         self.dateofbirth = dateofbirth
@@ -579,7 +579,7 @@ def main():
     session = Session()
 
     if args.memberfile:
-        import clubmember
+        from . import clubmember
         members = clubmember.ClubMember(args.memberfile)
         
         for name in members.getmembers():
@@ -601,7 +601,7 @@ def main():
             OUT.write('found id={0}, runner={1}\n'.format(runner.id,runner))
         
     if args.racefile:
-        import racefile
+        from . import racefile
         races = racefile.RaceFile(args.racefile)
         
         for race in races.getraces():

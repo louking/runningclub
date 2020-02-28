@@ -39,8 +39,8 @@ import csv
 # github
 
 # home grown
-import version
-import racedb
+from . import version
+from . import racedb
 from loutilities import timeu, csvwt
 
 # exceptions for this module.  See __init__.py for package exceptions
@@ -79,7 +79,7 @@ class ClubMember():
     #----------------------------------------------------------------------
     def __init__(self,csvfile,cutoff=0.6,exceldates=True):
     #----------------------------------------------------------------------
-        _IN = open(csvfile,'rb')
+        _IN = open(csvfile,'r',newline='')
         IN = csv.DictReader(_IN)
         
         # collect member information by member name
@@ -162,7 +162,7 @@ class ClubMember():
         :rtype: {'matchingmembers':member record list, 'exactmatch':boolean, 'closematches':member name list}
         '''
         
-        closematches = difflib.get_close_matches(name.lower(),self.members.keys(),cutoff=self.cutoff)
+        closematches = difflib.get_close_matches(name.lower(),list(self.members.keys()),cutoff=self.cutoff)
         
         rval = {}
         if len(closematches) > 0:
@@ -292,7 +292,7 @@ class XlClubMember(ClubMember):
 
         # retrieve first sheet's csv filename
         csvfiles = c.getfiles()
-        csvsheets = csvfiles.keys()
+        csvsheets = list(csvfiles.keys())
         csvfile = csvfiles[csvsheets[0]]
 
         # do all the work
@@ -368,7 +368,7 @@ class DbClubMember(ClubMember):
 
         # retrieve first sheet's csv filename
         csvfiles = d.getfiles()
-        csvsheets = csvfiles.keys()
+        csvsheets = list(csvfiles.keys())
         csvfile = csvfiles[csvsheets[0]]
         
         # do all the work

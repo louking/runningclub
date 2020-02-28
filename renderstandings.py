@@ -41,10 +41,10 @@ import xlwt
 # other
 
 # home grown
-from config import parameterError,dbConsistencyError
-import version
-import racedb
-import render
+from .config import parameterError,dbConsistencyError
+from . import version
+from . import racedb
+from . import render
 
 ########################################################################
 class BaseStandingsHandler():
@@ -888,7 +888,7 @@ class StandingsRenderer():
                 #    byrunner[name]['bydivision'].append(max(divpoints,0))
                 #
             else:
-                raise parameterError, 'results must be ordered by time, agtime or agpercent'
+                raise parameterError('results must be ordered by time, agtime or agpercent')
             
         return numresults            
     
@@ -909,7 +909,7 @@ class StandingsRenderer():
             for div in self.session.query(racedb.Divisions).filter_by(seriesid=self.series.id,active=True).order_by(racedb.Divisions.divisionlow).all():
                 divisions.append((div.divisionlow,div.divisionhigh))
             if len(divisions) == 0:
-                raise dbConsistencyError, 'series {0} indicates divisions to be calculated, but no divisions found'.format(self.series.name)
+                raise dbConsistencyError('series {0} indicates divisions to be calculated, but no divisions found'.format(self.series.name))
 
         # Get first race for filename year -- assume all active races are within the same year
         firstrace = self.session.query(racedb.Race).filter_by(active=True).order_by(racedb.Race.racenum).first()
@@ -960,7 +960,7 @@ class StandingsRenderer():
                     bypoints = []
                     for name in divrunner[div]:
                         # convert each race result to int if possible
-                        byrunner[name]['bydivision'] = [int(r) if type(r)==float and r==int(r) else r for r in byrunner[name]['bydivision']]
+                        byrunner[name]['bydivision'] = [int(r) if isinstance(r, float) and r==int(r) else r for r in byrunner[name]['bydivision']]
                         racetotals = byrunner[name]['bydivision'][:]    # make a copy
                         racetotals.sort(reverse=True)
                         # total numbers only, and convert to int if possible
@@ -1016,7 +1016,7 @@ class StandingsRenderer():
             bypoints = []
             for name in byrunner:
                 # convert each race result to int if possible
-                byrunner[name]['bygender'] = [int(r) if type(r)==float and r==int(r) else r for r in byrunner[name]['bygender']]
+                byrunner[name]['bygender'] = [int(r) if isinstance(r, float) and r==int(r) else r for r in byrunner[name]['bygender']]
                 racetotals = byrunner[name]['bygender'][:]    # make a copy
                 racetotals.sort(reverse=True)
                 # total numbers only, and convert to int if possible

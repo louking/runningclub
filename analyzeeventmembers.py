@@ -40,7 +40,7 @@ from matplotlib.font_manager import FontProperties
 from running.runningaheadmembers import RunningAheadMembers
 from running.runningaheadparticipants import RunningAheadParticipants
 from loutilities import timeu
-import version
+from . import version
 
 ymd = timeu.asctime('%Y-%m-%d')
 mdy = timeu.asctime('%m/%d/%Y')
@@ -71,7 +71,7 @@ def rendermemberanalysis(ordhist,outfile):
     annosdone = False
 
     # loop each day delta
-    for dy in ordhist.keys():
+    for dy in list(ordhist.keys()):
         
         # sum annotated text
         annosum += ordhist[dy]
@@ -82,16 +82,16 @@ def rendermemberanalysis(ordhist,outfile):
 
         # capture index when dy is at MAXDELTA
         if dy == MAXDELTA:
-            lastindex = ordhist.keys().index(dy)
+            lastindex = list(ordhist.keys()).index(dy)
             annosdone = True
 
     # get cumulative values
-    values = ordhist.values()[0:lastindex+1]
+    values = list(ordhist.values())[0:lastindex+1]
     cumvalues = np.cumsum(values)
         
     # plot the data
-    ax.bar(ordhist.keys()[0:lastindex+1], values, label='per day', color='green', edgecolor='none')
-    ax.plot(ordhist.keys()[0:lastindex+1], cumvalues, label='cumulative')
+    ax.bar(list(ordhist.keys())[0:lastindex+1], values, label='per day', color='green', edgecolor='none')
+    ax.plot(list(ordhist.keys())[0:lastindex+1], cumvalues, label='cumulative')
     for anno in annos:
         ax.annotate(anno[1],anno,fontproperties=annofont)
 
@@ -116,7 +116,7 @@ def analyzemembership(memberfileh, participantfileh, detailfile=None):
     
     # debug
     if detailfile:
-        _DETL = open(detailfile,'wb')
+        _DETL = open(detailfile,'w',newline='')
         detailhdr = 'eventname,dob,membername,email,status,joindate,registered,join2event'.split(',')
         DETL = csv.DictWriter(_DETL,detailhdr)
         DETL.writeheader()
@@ -198,8 +198,7 @@ def analyzemembership(memberfileh, participantfileh, detailfile=None):
         _DETL.close()
         
     # create orderered histogram
-    allcounts = hist.keys()
-    allcounts.sort()
+    allcounts = sorted(list(hist.keys()))
     ordhist = OrderedDict()
     for y in range(min(allcounts),max(allcounts)+1):
         ordhist[y] = hist[y] if y in hist else 0
@@ -221,7 +220,7 @@ def main():
     args = parser.parse_args()
     
     # analyzed data in member file
-    with open(args.memberfile,'rb') as MEMBERS, open(args.eventfile,'rb') as EVENTS:
+    with open(args.memberfile,'r',newline='') as MEMBERS, open(args.eventfile,'r',newline='') as EVENTS:
         ordhist = analyzemembership(MEMBERS, EVENTS, args.detailfile)
     
     # render analyzed data

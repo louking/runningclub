@@ -38,8 +38,8 @@ import argparse
 # other
 
 # home grown
-import version
-import racedb
+from . import version
+from . import racedb
 
 
 #----------------------------------------------------------------------
@@ -63,7 +63,7 @@ def listraces(session,year=None):
     IDLEN = 6
     RESULTLEN = len('results')
     cols = '{0:' + str(IDLEN) + 's} {1:10s} {2:' + str(RACELEN) + 's} {3:' + str(RESULTLEN) + 's} {4:30s}'
-    print cols.format('raceid','date','race','results','series')
+    print(cols.format('raceid','date','race','results','series'))
     for race in session.query(racedb.Race).order_by(racedb.Race.year,racedb.Race.id).filter_by(**filters):
         theseseries = []
 
@@ -78,7 +78,7 @@ def listraces(session,year=None):
             
         seriesdisplay = ','.join(theseseries)
         
-        print cols.format(str(race.id).rjust(IDLEN),race.date,race.name[0:RACELEN],results,seriesdisplay)
+        print(cols.format(str(race.id).rjust(IDLEN),race.date,race.name[0:RACELEN],results,seriesdisplay))
         
 #----------------------------------------------------------------------
 def main(): 

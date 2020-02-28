@@ -53,10 +53,10 @@ import time
 # other
 
 # home grown
-import version
-import clubmember
-import racedb
-from racedb import dbConsistencyError
+from . import version
+from . import clubmember
+from . import racedb
+from .racedb import dbConsistencyError
 from loutilities import timeu
 
 # module globals
@@ -89,7 +89,7 @@ def main():
     elif ext in ['.csv']:
         members = clubmember.CsvClubMember(memberfile)
     else:
-        print '***ERROR: invalid memberfile {}, must be csv, xls or xlsx'.format(memberfile)
+        print('***ERROR: invalid memberfile {}, must be csv, xls or xlsx'.format(memberfile))
         return
     
     # get old clubmembers from database
@@ -108,7 +108,7 @@ def main():
     logdir = os.path.dirname(args.memberfile)
     memberfilebase = os.path.splitext(os.path.basename(args.memberfile))[0]
     newmemlogname = '{0}-newmem.csv'.format(memberfilebase)
-    NEWMEM = open(os.path.join(logdir,newmemlogname),'wb')
+    NEWMEM = open(os.path.join(logdir,newmemlogname),'w',newline='')
     NEWMEMCSV = csv.DictWriter(NEWMEM,['name','dob'])
     NEWMEMCSV.writeheader()
     
@@ -189,7 +189,7 @@ def main():
                     added = racedb.update(session,racedb.Runner,dbnonmember,thisrunner,skipcolumns=['id'])
                     found = True
                 else:
-                    print '{} found in database, wrong age, expected {} found {} in {}'.format(thisname,expectedage,resultage,result)
+                    print('{} found in database, wrong age, expected {} found {} in {}'.format(thisname,expectedage,resultage,result))
                     # TODO: need to make file for these, also need way to force update, because maybe bad date in database for result
                     # currently this will cause a new runner entry
             

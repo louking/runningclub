@@ -19,7 +19,7 @@ import glob
 import pdb
 
 # home grown
-import version
+from . import version
 
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
@@ -42,6 +42,8 @@ setup(
 #    include_package_data = True,
     scripts = [
         # 'runningclub/agegrade.py', -- moved to loutilities
+        # TODO: many of these are obsolete, and scripts should be removed, with python files deleted
+        #       see also entry_points below
         'runningclub/analyzeeventmembers.py',
         'runningclub/analyzemembership.py',
         'runningclub/eventmerchandise2order.py',
@@ -59,8 +61,8 @@ setup(
         'runningclub/renderrace.py',
         'runningclub/renderstandings.py',
         'runningclub/summarizemembers.py',
-        'runningclub/summarizemembers_rsu.py',
-        'runningclub/mailchimpimport_rsu.py',
+        'runningclub/summarizemembers_rsu.py',  # in use steeplechasers/crontab as of 2020-02-28
+        'runningclub/mailchimpimport_rsu.py',   # in use steeplechasers/crontab as of 2020-02-28
         'runningclub/results_ag_analysis.py',
     ],
 

@@ -36,8 +36,6 @@ from running.runsignup import RunSignUp
 from loutilities.transform import Transform
 from loutilities.configparser import getitems
 
-import version
-
 class parameterError(Exception): pass
 thislogger = logging.getLogger("runningclub.mailchimpimport_rsu")
 
@@ -53,7 +51,7 @@ class Obj(object):
     def __str__(self):
     #---------------------------------------------------------------------- 
         result = '<{}\n'.format(self.__class__.__name__)
-        for key in vars(self).keys():
+        for key in list(vars(self).keys()):
             result += '   {} : {}\n'.format(key, getattr(self,key))
         result += '>'
         return result
@@ -235,13 +233,13 @@ def importmembers(configfile, debug=False, stats=False):
     # set up specific groups for mc api
     mcapi = Obj()
     # members new to the list get all the groups
-    mcapi.newmember = { id : True for id in groups.values() + shadowgroups.values() + [mccurrmembergroup] + [mcpastmembergroup]}
+    mcapi.newmember = { id : True for id in list(groups.values()) + list(shadowgroups.values()) + [mccurrmembergroup] + [mcpastmembergroup]}
     # previous members who lapsed get the member groups disabled
-    mcapi.nonmember = { id : False for id in [groups[gname] for gname in groups.keys() if gname in shadowgroups] + [mccurrmembergroup] }
+    mcapi.nonmember = { id : False for id in [groups[gname] for gname in list(groups.keys()) if gname in shadowgroups] + [mccurrmembergroup] }
     # members groups set to True, for mcapi.unsubscribed merge
-    mcapi.member = { id : True for id in shadowgroups.values() + [groups[gname] for gname in groups.keys() if gname in shadowgroups] + [mccurrmembergroup] + [mcpastmembergroup]}
+    mcapi.member = { id : True for id in list(shadowgroups.values()) + [groups[gname] for gname in list(groups.keys()) if gname in shadowgroups] + [mccurrmembergroup] + [mcpastmembergroup]}
     # unsubscribed members who previously were not past members get member groups turned on and 'other' groups turned off 
-    mcapi.unsubscribed = merge_dicts (mcapi.member, { id:False for id in [groups[gname] for gname in groups.keys() if gname not in shadowgroups] })
+    mcapi.unsubscribed = merge_dicts (mcapi.member, { id:False for id in [groups[gname] for gname in list(groups.keys()) if gname not in shadowgroups] })
 
     # retrieve all members of this mailchimp list
     # key these into dict by id (md5 has of lower case email address)
@@ -294,7 +292,7 @@ def importmembers(configfile, debug=False, stats=False):
                         stat.membercleanedskipped += 1;
                 # past member, recall what they had set before for the member stuff
                 else:
-                    pastmemberinterests = merge_dicts({ groups[gname] : mcmember['interests'][shadowgroups[gname]] for gname in shadowgroups.keys() }, 
+                    pastmemberinterests = merge_dicts({ groups[gname] : mcmember['interests'][shadowgroups[gname]] for gname in list(shadowgroups.keys()) }, 
                                                       { mccurrmembergroup : True })
                     client.lists.members.update(list_id=list_id, subscriber_hash=mcmemberid, data={'interests' : pastmemberinterests})
                     stat.pastmember += 1
@@ -338,8 +336,11 @@ def main():
     import member data to mailchimp
 
     '''
-    parser = argparse.ArgumentParser(version='{0} {1}'.format('runningclub', version.__version__))
+    from runningclub.version import __version__
+
+    parser = argparse.ArgumentParser(prog='runningclub')
     parser.add_argument('configfile', help='configuration filename')
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s {}'.format(__version__))
     parser.add_argument('--debug', help='turn on requests debugging', action='store_true')
     parser.add_argument('--stats', help='turn on stats display', action='store_true')
     args = parser.parse_args()

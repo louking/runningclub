@@ -40,11 +40,11 @@ import csv
 # other
 
 # home grown
-from config import dbConsistencyError
-import version
-import racedb
-import clubmember
-import raceresults
+from .config import dbConsistencyError
+from . import version
+from . import racedb
+from . import clubmember
+from . import raceresults
 
 #----------------------------------------------------------------------
 def checkmembership(session,registrationfile,racedate,excluded,active,FOUNDCSV,MISSEDCSV,CLOSECSV): 
@@ -69,7 +69,7 @@ def checkmembership(session,registrationfile,racedate,excluded,active,FOUNDCSV,M
     results = []
     while True:
         try:
-            result = rr.next()
+            result = next(rr)
             results.append(result)
         except StopIteration:
             break
@@ -139,7 +139,7 @@ def main():
     # get list of excluded racers from excludefile
     excluded = []
     if excludefile is not None:
-        with open(excludefile,'rb') as excl:
+        with open(excludefile,'r',newline='') as excl:
             exclc = csv.DictReader(excl)
             for row in exclc:
                 excluded.append(row['registration name'])
@@ -148,21 +148,21 @@ def main():
     logdir = os.path.dirname(registrationfile)
     registrationfilebase = os.path.basename(registrationfile)
     foundlogname = '{0}-found.csv'.format(os.path.splitext(registrationfilebase)[0])
-    FOUND = open(os.path.join(logdir,foundlogname),'wb')
+    FOUND = open(os.path.join(logdir,foundlogname),'w',newline='')
     FOUNDCSV = csv.DictWriter(FOUND,['registration name','registration age','database name','database dob','ratio'])
     FOUNDCSV.writeheader()
     missedlogname = '{0}-missed.csv'.format(os.path.splitext(registrationfilebase)[0])
-    MISSED = open(os.path.join(logdir,missedlogname),'wb')
+    MISSED = open(os.path.join(logdir,missedlogname),'w',newline='')
     MISSEDCSV = csv.DictWriter(MISSED,['registration name','registration age','database name','database dob','ratio'])
     MISSEDCSV.writeheader()
     closelogname = '{0}-close.csv'.format(os.path.splitext(registrationfilebase)[0])
-    CLOSE = open(os.path.join(logdir,closelogname),'wb')
+    CLOSE = open(os.path.join(logdir,closelogname),'w',newline='')
     CLOSECSV = csv.DictWriter(CLOSE,['registration name','registration age','database name','database dob','ratio'])
     CLOSECSV.writeheader()
     
     # check membership for people within registration file
     numentries = checkmembership(session,registrationfile,racedate,excluded,active,FOUNDCSV,MISSEDCSV,CLOSECSV)
-    print '   {0} entries processed'.format(numentries)
+    print('   {0} entries processed'.format(numentries))
     
     # close log entries 
     FOUND.close()

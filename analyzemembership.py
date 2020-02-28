@@ -36,7 +36,7 @@ from running.runningaheadmembers import RunningAheadMembers
 from loutilities import timeu
 ymd = timeu.asctime('%Y-%m-%d')
 
-import version
+from . import version
 
 #----------------------------------------------------------------------
 def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None): 
@@ -68,9 +68,9 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
     # if desired, remove months at end which are not "full months"
     # assumes last date in month is always populated
     if fullmonth:
-        lastyear = ordyears.keys()[-1]
-        lastdate = ordyears[lastyear].keys()[-1]
-        tempdates = ordyears[lastyear].keys()
+        lastyear = list(ordyears.keys())[-1]
+        lastdate = list(ordyears[lastyear].keys())[-1]
+        tempdates = list(ordyears[lastyear].keys())
 
         # handle all months other than January
         # delete dates that didn't reach the end of the month for the last month in the data
@@ -90,8 +90,8 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
 
     # set up header and size the plots
     # note lastyear may have changed from above if fullmonth and lastdate was in January
-    lastyear = ordyears.keys()[-1]
-    lastdate = ordyears[lastyear].keys()[-1]
+    lastyear = list(ordyears.keys())[-1]
+    lastdate = list(ordyears[lastyear].keys())[-1]
     fig.suptitle('year on year member count as of {}'.format(ymd.dt2asc(lastdate)))
     fig.subplots_adjust(bottom=0.1, right=0.8, top=0.93)
 
@@ -104,7 +104,7 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
     annofont = FontProperties(size='small')
     
     # loop each year
-    for y in ordyears.keys():
+    for y in list(ordyears.keys()):
         
         # collect annotations
         annos = []
@@ -113,7 +113,7 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
     
         # normalize dates to 2016
         # actual year does not matter -- use 2016 because it is a leap year
-        tempdates = ordyears[y].keys()
+        tempdates = list(ordyears[y].keys())
         dates = []
         d0 = tempdates[0]
         lastsum = ordyears[y][d0]
@@ -136,7 +136,7 @@ def rendermemberanalysis(ordyears,fullmonth,outfile,debugfile=None):
         annos.append((normdate,annosum))
 
         # get cumulative values
-        values = ordyears[y].values()
+        values = list(ordyears[y].values())
         cumvalues = np.cumsum(values)
         
         # plot the data
@@ -167,7 +167,7 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
     
     # debug
     if detailfile:
-        _DETL = open(detailfile,'wb')
+        _DETL = open(detailfile,'w',newline='')
         DETL = csv.DictWriter(_DETL,['ord','effective','name','catchup',
                                 # 'renewal',
                                 'join','expiration'])
@@ -258,8 +258,7 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
         years.pop(y)
 
     # create orderered dicts
-    allyears = years.keys()
-    allyears.sort()
+    allyears = sorted(list(years.keys()))
 
     ordyears = OrderedDict()
     for y in allyears:
@@ -267,7 +266,7 @@ def analyzemembership(memberfileh,detailfile=None,overlapfile=None):
 
         # make sure each month has entry in first and final date, so annotations in rendermembershipanalysis work nicely
         thismonth = 1
-        for thisitem in sorted(years[y].items(), key=lambda t: t[0]):
+        for thisitem in sorted(list(years[y].items()), key=lambda t: t[0]):
             thisdate = thisitem[0]
 
             # if we are at a new month, create an empty entry for the first day of this month
@@ -310,7 +309,7 @@ def main():
     args = parser.parse_args()
     
     # analyze data in member file
-    IN = open(args.memberfile,'rb')
+    IN = open(args.memberfile,'r',newline='')
     ordyears = analyzemembership(IN,args.detailfile,args.overlapfile)
     IN.close()
     

@@ -61,10 +61,10 @@ import argparse
 # other
 
 # home grown
-from config import dbConsistencyError
-import version
-import racefile
-import racedb
+from .config import dbConsistencyError
+from . import version
+from . import racefile
+from . import racedb
 
 # debug output, maybe
 OUT = None
@@ -187,7 +187,7 @@ def updateraceseries(session, fileraces):
             thisseries = session.query(racedb.Series).filter_by(name=seriesname).first()
             
             if not thisseries:
-                raise dbConsistencyError,'race refers to series {0}, which was not in database'.format(race['inseries'])
+                raise dbConsistencyError('race refers to series {0}, which was not in database'.format(race['inseries']))
             
             # add or update raceseries in database
             raceseries = racedb.RaceSeries(thisrace.id,thisseries.id)
@@ -237,7 +237,7 @@ def updatedivisions(session, fileraces):
     for seriesname in alldivisions:
         series = session.query(racedb.Series).filter_by(name=seriesname).first()
         if not series:
-            raise dbConsistencyError,'division refers to series {0}, which was not in database'.format(thisdivision['series'])
+            raise dbConsistencyError('division refers to series {0}, which was not in database'.format(thisdivision['series']))
         # add or update division in database
         for divlow,divhigh in alldivisions[seriesname]:
             division = racedb.Divisions(series.id,divlow,divhigh)

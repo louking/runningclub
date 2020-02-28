@@ -40,9 +40,9 @@ import xlwt
 # other
 
 # home grown
-import version
-import racedb
-import render
+from . import version
+from . import racedb
+from . import render
 
 ########################################################################
 class BaseRaceHandler():
@@ -497,7 +497,7 @@ class TxtRaceHandler(BaseRaceHandler):
         :param time: time (seconds)
         '''
         
-        if type(time) in [str,unicode]:
+        if type(time) in [str,str]:
             dtime = time
         else:
             dtime = render.rendertime(time,self.timeprecision)
@@ -512,7 +512,7 @@ class TxtRaceHandler(BaseRaceHandler):
         :param agfactor: age grade factor (between 0 and 1)
         '''
 
-        if type(agfactor) == float:
+        if isinstance(agfactor, float):
             self.pline['agfactor'] = '{0:0.4f}'.format(agfactor)
         else:
             self.pline['agfactor'] = agfactor
@@ -526,7 +526,7 @@ class TxtRaceHandler(BaseRaceHandler):
         :param agpercent: age grade percentage (between 0 and 100)
         '''
         
-        if type(agpercent) == float:
+        if isinstance(agpercent, float):
             self.pline['agpercent'] = '{0:0.2f}'.format(agpercent)
         else:
             self.pline['agpercent'] = agpercent
@@ -540,7 +540,7 @@ class TxtRaceHandler(BaseRaceHandler):
         :param agtime: age grade time (seconds)
         '''
         
-        if type(agtime) in [str,unicode]:
+        if type(agtime) in [str,str]:
             dtime = agtime
         else:
             dtime = render.rendertime(agtime,self.agtimeprecision) # round
@@ -677,7 +677,7 @@ class XlRaceHandler(BaseRaceHandler):
         
         # render race major heading
         resulttype = rengen
-        if rengen in MF.values():
+        if rengen in list(MF.values()):
             resulttype += "'s"
         OB = {'time':'time','agtime':'adj time','agpercent':'age grade'}
         ob = OB[orderby]
@@ -781,7 +781,7 @@ class XlRaceHandler(BaseRaceHandler):
         :param time: time (seconds)
         '''
         
-        if type(time) in [str,unicode]:
+        if type(time) in [str,str]:
             xltime = time
         else:
             time = render.adjusttime(time,self.timeprecision)
@@ -838,7 +838,7 @@ class XlRaceHandler(BaseRaceHandler):
         :param agtime: age grade time (seconds)
         '''
         
-        if type(agtime) in [str,unicode]:
+        if type(agtime) in [str,str]:
             xltime = agtime
         else:
             agtime = render.adjusttime(agtime,self.agtimeprecision)
@@ -936,8 +936,7 @@ class RaceRenderer():
         allresults = self.session.query(racedb.RaceResult).filter_by(raceid=self.raceid,seriesid=raceseries.seriesid,**self.resultfilter).all()
             
         # sort results based on self.orderby field and highlow directive
-        dresults = [(getattr(r,self.orderby),r) for r in allresults]
-        dresults.sort()
+        dresults = sorted([(getattr(r,self.orderby),r) for r in allresults])
         if self.hightolow: dresults.reverse()
         allresults = [dr[1] for dr in dresults]
         
@@ -981,7 +980,7 @@ def main():
     session = racedb.Session()
     race = session.query(racedb.Race).filter_by(id=raceid).first()
     if not race:
-        print 'raceid {0} not found.  Use listraces to determine raceid'.format(raceid)
+        print('raceid {0} not found.  Use listraces to determine raceid'.format(raceid))
         return
     
     # get precision for time, agtime

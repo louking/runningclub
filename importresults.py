@@ -43,13 +43,13 @@ import xlrd
 # other
 
 # home grown
-from config import dbConsistencyError
-import version
-import racedb
-import clubmember
-import raceresults
-import agegrade
-import render
+from .config import dbConsistencyError
+from . import version
+from . import racedb
+from . import clubmember
+from . import raceresults
+from loutilities import agegrade
+from . import render
 from loutilities import timeu
 
 # module globals
@@ -88,7 +88,7 @@ def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inacti
         alldivs = session.query(racedb.Divisions).filter_by(seriesid=series.id,active=True).all()
         
         if len(alldivs) == 0:
-            raise dbConsistencyError, 'series {0} indicates divisions to be calculated, but no divisions found'.format(series.name)
+            raise dbConsistencyError('series {0} indicates divisions to be calculated, but no divisions found'.format(series.name))
         
         divisions = []
         for div in alldivs:
@@ -107,7 +107,7 @@ def tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inacti
     results = []
     while True:
         try:
-            result = rr.next()
+            result = next(rr)
             results.append(result)
         except StopIteration:
             break
@@ -449,7 +449,7 @@ def main():
     # verify race exists
     race = session.query(racedb.Race).filter_by(id=raceid,active=True).first() # should be one of these
     if not race:
-        print '*** race id {0} not found in database'.format(raceid)
+        print('*** race id {0} not found in database'.format(raceid))
         return
     
     # make sure the user really wants to do this
@@ -461,7 +461,7 @@ def main():
         else:
             exists = '(NOTE: race results already entered, and will be overwritten)'
     elif args.delete:
-        print '*** no race results found for {0} {1}'.format(race.year,race.name)
+        print('*** no race results found for {0} {1}'.format(race.year,race.name))
         return
     
     # prompt user to verify update/delete of this race's results, if not "forced"
@@ -469,15 +469,15 @@ def main():
         action = 'update'
         if args.delete:
             action = 'delete'
-        answer = raw_input('{0} results for {1} {2} {3}? (type yes) '.format(action,race.year,race.name,exists))
+        answer = input('{0} results for {1} {2} {3}? (type yes) '.format(action,race.year,race.name,exists))
         if answer != 'yes':
-            print '*** race update aborted -- no changes made'
+            print('*** race update aborted -- no changes made')
             return
     
     # first delete all results for this race
     numdeleted = session.query(racedb.RaceResult).filter_by(raceid=raceid).delete()
     if numdeleted:
-        print 'deleted {0} entries previously recorded'.format(numdeleted)
+        print('deleted {0} entries previously recorded'.format(numdeleted))
         
     # only actually update results if --delete option not selected
     if not args.delete:
@@ -485,7 +485,7 @@ def main():
         # get list of excluded racers from excludefile
         excluded = []
         if excludefile is not None:
-            with open(excludefile,'rb') as excl:
+            with open(excludefile,'r',newline='') as excl:
                 exclc = csv.DictReader(excl)
                 for row in exclc:
                     excluded.append(row['results name'])
@@ -493,7 +493,7 @@ def main():
         # get list of forced inclusions from nonmemberfile
         nonmemforced = []
         if nonmemberfile is not None:
-            with open(nonmemberfile,'rb') as nonm:
+            with open(nonmemberfile,'r',newline='') as nonm:
                 nonmc = csv.DictReader(nonm)
                 for row in nonmc:
                     nonmemforced.append(row['results name'])
@@ -509,28 +509,28 @@ def main():
         logdir = os.path.dirname(resultsfile)
         resultfilebase = os.path.basename(resultsfile)
         inactlogname = '{0}-inactive.csv'.format(os.path.splitext(resultfilebase)[0])
-        INACT = open(os.path.join(logdir,inactlogname),'wb')
+        INACT = open(os.path.join(logdir,inactlogname),'w',newline='')
         INACTCSV = csv.DictWriter(INACT,['results name','results age','database name','database dob','ratio'])
         INACTCSV.writeheader()
         missedlogname = '{0}-missed.csv'.format(os.path.splitext(resultfilebase)[0])
-        MISSED = open(os.path.join(logdir,missedlogname),'wb')
+        MISSED = open(os.path.join(logdir,missedlogname),'w',newline='')
         MISSEDCSV = csv.DictWriter(MISSED,['results name','results age','database name','database dob','ratio'])
         MISSEDCSV.writeheader()
         closelogname = '{0}-close.csv'.format(os.path.splitext(resultfilebase)[0])
-        CLOSE = open(os.path.join(logdir,closelogname),'wb')
+        CLOSE = open(os.path.join(logdir,closelogname),'w',newline='')
         CLOSECSV = csv.DictWriter(CLOSE,['results name','results age','database name','database dob','ratio'])
         CLOSECSV.writeheader()
         nonmemlogname = '{0}-nonmem.csv'.format(os.path.splitext(resultfilebase)[0])
-        NONMEM = open(os.path.join(logdir,nonmemlogname),'wb')
+        NONMEM = open(os.path.join(logdir,nonmemlogname),'w',newline='')
         NONMEMCSV = csv.DictWriter(NONMEM,['results name','results age','new','runner id'])
         NONMEMCSV.writeheader()
         
         # for each series - 'series' describes how to tabulate the results
         for series in theseseries:
             # tabulate each race for which there are results, if it hasn't been tabulated before
-            print 'tabulating {0}'.format(series.name)
+            print('tabulating {0}'.format(series.name))
             numentries = tabulate(session,race,resultsfile,excluded,nonmemforced,series,active,inactive,nonmember,INACTCSV,MISSEDCSV,CLOSECSV,NONMEMCSV)
-            print '   {0} entries processed'.format(numentries)
+            print('   {0} entries processed'.format(numentries))
             
             # only collect log entries for the first series
             if INACTCSV:

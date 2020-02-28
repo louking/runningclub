@@ -43,10 +43,10 @@ from Crypto.PublicKey import RSA
 # other
 
 # home grown
-import version
+from . import version
 from loutilities import extconfigparser
-import userpw
-from config import CONFIGDIR,PF,SECCF,OPTDBSERVER,OPTDBGLOBUSER,OPTDBPW,OPTUSERPWAPI,OPTCLUBABBREV,parameterError
+from . import userpw
+from .config import CONFIGDIR,PF,SECCF,OPTDBSERVER,OPTDBGLOBUSER,OPTDBPW,OPTUSERPWAPI,OPTCLUBABBREV,parameterError
 
 ADMINCONFIGFILE = 'rcadminconfig.cfg'
 ACF = extconfigparser.ConfigFile(CONFIGDIR,ADMINCONFIGFILE)

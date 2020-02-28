@@ -30,7 +30,7 @@ methods to access /api/userpw webapp methods - see :mod:`userpwapp`
 
 # standard
 import datetime
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import json
 import binascii
 
@@ -38,8 +38,8 @@ import binascii
 import httplib2
 
 # home grown
-import config
-from config import accessError,CF,SECCF,OPTUSERPWAPI
+from . import config
+from .config import accessError,CF,SECCF,OPTUSERPWAPI
 
 HTTPTIMEOUT = 5
 HTTP = httplib2.Http(timeout=HTTPTIMEOUT)
@@ -84,17 +84,17 @@ class UserPw():
         if not username:
             params.pop('username')
             
-        url = self.apiurl+'{method}?{params}'.format(method=method,params=urllib.urlencode(params))
+        url = self.apiurl+'{method}?{params}'.format(method=method,params=urllib.parse.urlencode(params))
         resp,jsoncontent = HTTP.request(url,method='POST',headers={'content-length':'0'})
     
         if resp.status != 200:
-            raise accessError, 'URL response status = {}, req=POST {}'.format(resp.status,url)
+            raise accessError('URL response status = {}, req=POST {}'.format(resp.status,url))
         
         # unmarshall the response content
         content = json.loads(jsoncontent)
     
         if content['status'] != 'OK':
-            raise accessError, 'URL content status = {}, req=POST {}'.format(content['status'],url)
+            raise accessError('URL content status = {}, req=POST {}'.format(content['status'],url))
         
     #----------------------------------------------------------------------
     def _getattr(self,runningclub,username,method,attr):
@@ -110,17 +110,17 @@ class UserPw():
         params = {'runningclub':runningclub,
                   'username':username}
             
-        url = self.apiurl+'{method}?{params}'.format(method=method,params=urllib.urlencode(params))
+        url = self.apiurl+'{method}?{params}'.format(method=method,params=urllib.parse.urlencode(params))
         resp,jsoncontent = HTTP.request(url,method='GET',headers={'content-length':'0'})
     
         if resp.status != 200:
-            raise accessError, 'URL response status = {}, req=GET {}'.format(resp.status,url)
+            raise accessError('URL response status = {}, req=GET {}'.format(resp.status,url))
         
         # unmarshall the response content
         content = json.loads(jsoncontent)
     
         if content['status'] != 'OK':
-            raise accessError, 'URL content status = {}, req=GET {}'.format(content['status',url])
+            raise accessError('URL content status = {}, req=GET {}'.format(content['status',url]))
         
         return content[attr]
         

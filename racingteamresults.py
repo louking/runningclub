@@ -37,8 +37,8 @@ import re
 # github
 
 # home grown
-import version
-from clubmember import CsvClubMember
+from . import version
+from .clubmember import CsvClubMember
 from loutilities import timeu
 tmdy = timeu.asctime('%m/%d/%Y')
 tymd = timeu.asctime('%Y-%m-%d')
@@ -75,7 +75,7 @@ class Club():
         '''
         # create debug file if specified
         if debugfile:
-            _DEB = open(debugfile, 'wb')
+            _DEB = open(debugfile, 'w',newline='')
             debughdrs = 'date,race,resname,membername,dob'.split(',')
             DEB = csv.DictWriter(_DEB,debughdrs)
             DEB.writeheader()
@@ -93,7 +93,7 @@ class Club():
                 racename = race['Race']
                 origfname = '{}-{}.csv'.format(racedate,racename)
                 fname = ''.join(c for c in origfname if c in valid_chars)
-                with open(fname,'wb') as _RFH:
+                with open(fname,'w',newline='') as _RFH:
                     RFH = csv.DictWriter(_RFH,resultsfields)
                     RFH.writeheader()
                     place = 1
@@ -111,7 +111,7 @@ class Club():
                         # look up athlete's dob and gender
                         member = self.members.getmember(thisathlete)
                         if not member:
-                            raise memberError,'could not find {} - see race {}'.format(thisathlete, race)
+                            raise memberError('could not find {} - see race {}'.format(thisathlete, race))
                         bestmember = member['matchingmembers'][0]
                         membername = bestmember['name']
                         membergen  = bestmember['gender'][0]    # just first character
@@ -119,11 +119,11 @@ class Club():
 
                         # debug
                         if debugfile:
-                            DEB.writerow(dict(zip(debughdrs,[racedate,racename,thisathlete,membername,memberdob])))
+                            DEB.writerow(dict(list(zip(debughdrs,[racedate,racename,thisathlete,membername,memberdob]))))
 
                         # output result
                         age = timeu.age(tymd.asc2dt(racedate),tymd.asc2dt(memberdob))
-                        RFH.writerow(dict(zip(resultsfields,[place,membername,membergen,age,thistime])))
+                        RFH.writerow(dict(list(zip(resultsfields,[place,membername,membergen,age,thistime]))))
                         place += 1
 
         finally:
@@ -146,7 +146,7 @@ def main():
     args = parser.parse_args()
 
     members = Club(args.memberfile)
-    _FH = open(args.resultsspreadsheet,'rb')
+    _FH = open(args.resultsspreadsheet,'r',newline='')
     FH = csv.DictReader(_FH)
     members.splitresults(FH,args.debugfile)
 

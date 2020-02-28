@@ -75,10 +75,10 @@ import argparse
 # other
 
 # home grown
-import version
+from . import version
 from loutilities import extconfigparser
-import userpw
-from config import CONFIGDIR,PF,OPTTBL,SECCF,OPTDBPW,OPTDBSERVER,OPTUSERPWAPI,OPTCLUBABBREV,OPTEMAIL,OPTCLEARDB,DBCLEAROPTS,parameterError
+from . import userpw
+from .config import CONFIGDIR,PF,OPTTBL,SECCF,OPTDBPW,OPTDBSERVER,OPTUSERPWAPI,OPTCLUBABBREV,OPTEMAIL,OPTCLEARDB,DBCLEAROPTS,parameterError
 
 ADMINCONFIGFILE = 'rcadminconfig.cfg'
 ACF = extconfigparser.ConfigFile(CONFIGDIR,ADMINCONFIGFILE)
@@ -92,7 +92,7 @@ def updateconfig(**configargs):
     update configuration parameters
     
     :param configargs: one or more of {args}
-    '''.format(args=OPTTBL.keys()+[OPTDBPW])
+    '''.format(args=list(OPTTBL.keys())+[OPTDBPW])
     
     # process OPTUSERPWAPI first
     if OPTUSERPWAPI in configargs:
@@ -102,7 +102,7 @@ def updateconfig(**configargs):
         global PERSIST
         PERSIST = userpw.UserPw(apiurl)
     else:
-        raise parameterError, "'OPTUSERPWAPI' is required"
+        raise parameterError("'OPTUSERPWAPI' is required")
     
     # options in OPTTBL are in the configuration file
     # other options are in the password file
@@ -124,10 +124,10 @@ def updateconfig(**configargs):
         elif opt == OPTDBPW:
             if configargs[OPTDBPW] is not None:
                 if configargs[OPTDBSERVER] is None:
-                    raise parameterError, "'{server}' option required with '{pw}' option".format(server=OPTDBSERVER,pw=OPTDBPW)
+                    raise parameterError("'{server}' option required with '{pw}' option".format(server=OPTDBSERVER,pw=OPTDBPW))
                 
                 if configargs[OPTCLUBABBREV] is None:
-                    raise parameterError, "'{club}' option required with '{pw}' option".format(club=OPTCLUBABBREV,pw=OPTDBPW)
+                    raise parameterError("'{club}' option required with '{pw}' option".format(club=OPTCLUBABBREV,pw=OPTDBPW))
                     
                 for unamepw in configargs[OPTDBPW].split(','):
                     unamepwtup = unamepw.split(':')
@@ -146,7 +146,7 @@ def updateconfig(**configargs):
         
         # this should not be able to happen, but...
         else:
-            raise parameterError, 'unknown option {opt}'.format(opt=opt)
+            raise parameterError('unknown option {opt}'.format(opt=opt))
     
 #----------------------------------------------------------------------
 def getoption(option): 
@@ -189,7 +189,7 @@ def main():
     
     # see config.OPTTBL for option definitions
     cfg = {}
-    for opt in OPTTBL.keys():
+    for opt in list(OPTTBL.keys()):
         cfg[opt] = getoption(opt)
         sopt,helptxt = OPTTBL[opt]
         lopt = '--{opt}'.format(opt=opt)
@@ -202,7 +202,7 @@ def main():
     if vars(args)[OPTCLEARDB]:
         for opt in DBCLEAROPTS:
             deloption(opt)
-        print 'database options {opts} removed.  no other changes made'.format(opts=[o.upper() for o in DBCLEAROPTS])
+        print('database options {opts} removed.  no other changes made'.format(opts=[o.upper() for o in DBCLEAROPTS]))
         
     updateconfig(**vars(args))
 

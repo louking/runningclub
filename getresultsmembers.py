@@ -33,14 +33,14 @@ logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s')
 logger = logging.getLogger('runningclub.getresultsmembers')
 
 # home grown
-from raceresults import RaceResults, headerError #, dataError
-from clubmember import CsvClubMember
+from .raceresults import RaceResults, headerError #, dataError
+from .clubmember import CsvClubMember
 from loutilities import timeu
 from loutilities import agegrade
 from loutilities.namesplitter import split_full_name
 from loutilities.renderrun import rendertime
 dbdate = timeu.asctime('%Y-%m-%d')
-import version
+from . import version
 
 # control behavior of import
 DIFF_CUTOFF = 0.7   # ratio of matching characters for cutoff handled by 'clubmember'
@@ -155,7 +155,7 @@ class Member():
     # make dictionary for attributes which can be directly copied
     fileattrs  = 'Gender,DOB,RenewalDate,ExpirationDate'.split(',')
     classattrs = 'gender,dateofbirth,renewdate,expdate'.split(',')
-    file2class = dict(zip(fileattrs,classattrs))
+    file2class = dict(list(zip(fileattrs,classattrs)))
     
     #----------------------------------------------------------------------
     def set(self,filerow):
@@ -179,7 +179,7 @@ class Member():
             else:
                 renewdate = ''
         except ValueError:
-            raise parameterError, 'invalid renewdate {0}'.format(renewdate)
+            raise parameterError('invalid renewdate {0}'.format(renewdate))
         
         self.name = name    
         self.fname = fname    
@@ -216,7 +216,7 @@ class Members():
     def __init__(self, memberscsv):
     #----------------------------------------------------------------------
         # prepare to read file
-        MBR_ = open(memberscsv,'rb')
+        MBR_ = open(memberscsv,'r',newline='')
         MBR = csv.DictReader(MBR_)
         
         # make access to member record easy
@@ -309,7 +309,7 @@ def getresultsmember(memberfile,resultsfile,racedate,dist,outfile):
     members = Members(memberfile)
     
     # ready output file
-    with open(outfile,'wb') as MR_:
+    with open(outfile,'w',newline='') as MR_:
         addlfields = 'rendertime,dbname,dbhometown,dbmissed'.split(',')
         allfields = ManagedResult.fields + addlfields
         MR = csv.DictWriter(MR_,allfields,extrasaction='ignore')
@@ -321,7 +321,7 @@ def getresultsmember(memberfile,resultsfile,racedate,dist,outfile):
         membersonly = True  # code copied from rrwebapp, make compatible
         while True:
             try:
-                fileresult = rr.next()
+                fileresult = next(rr)
                 mngresult   = ManagedResult()
                 for field in fileresult:
                     if hasattr(mngresult,field):
@@ -400,7 +400,7 @@ def getresultsmember(memberfile,resultsfile,racedate,dist,outfile):
                     else:
                         addlvals = [rendertime(mngresult.time,0),None,None,rendermissed(missed,racedate)]
                     row = copy.copy(mngresult.__dict__)
-                    row.update(dict(zip(addlfields,addlvals)))
+                    row.update(dict(list(zip(addlfields,addlvals))))
                     MR.writerow(row)
                 
             except StopIteration:

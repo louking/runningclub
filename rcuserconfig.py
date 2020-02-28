@@ -56,10 +56,10 @@ from Crypto.PublicKey import RSA
 # other
 
 # home grown
-import version
+from . import version
 from loutilities import extconfigparser
-from config import CF,KF,OPTTBL,SECCF,OPTUSERPWAPI,OPTCLUBABBREV,OPTUNAME,OPTEMAIL,SECKEY,OPTPRIVKEY,OPTPUBKEY,parameterError
-import userpw
+from .config import CF,KF,OPTTBL,SECCF,OPTUSERPWAPI,OPTCLUBABBREV,OPTUNAME,OPTEMAIL,SECKEY,OPTPRIVKEY,OPTPUBKEY,parameterError
+from . import userpw
 
 # will be handle for persistent storage in webapp
 PERSIST = None
@@ -91,7 +91,7 @@ def updateconfig(username,email,configfile,resetkey=False):
         global PERSIST
         PERSIST = userpw.UserPw(apiurl)
     else:
-        raise parameterError, "'OPTUSERPWAPI' is required"
+        raise parameterError("'OPTUSERPWAPI' is required")
     
     # options in OPTTBL and OPTUNAME are in the configuration file
     for opt in configargs:
@@ -102,7 +102,7 @@ def updateconfig(username,email,configfile,resetkey=False):
             
         # this should not be able to happen, but...
         else:
-            raise parameterError, 'unknown option {opt}'.format(opt=opt)
+            raise parameterError('unknown option {opt}'.format(opt=opt))
             
     # special processing for OPTEMAIL, save email address in webapp
     PERSIST.updateemail(getoption(OPTCLUBABBREV),getoption(OPTUNAME),email)

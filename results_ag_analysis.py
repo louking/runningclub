@@ -36,7 +36,7 @@ from os.path import join as pathjoin
 # github
 
 # home grown
-import version
+from . import version
 from loutilities.transform import Transform
 from loutilities.timeu import asctime, age
 from datetime import date
@@ -128,7 +128,7 @@ def parsefilter(thisfilter):
     tmp_filters = thisfilter.split(',')
     for thisfilter in tmp_filters:
         limits = thisfilter.split('-')
-        thisrange = range(int(limits[0]), int(limits[-1])+1)
+        thisrange = list(range(int(limits[0]), int(limits[-1])+1))
         filters += thisrange
     filters.sort()
     return filters
@@ -156,7 +156,7 @@ def analyze(details, summarybase, mindist, maxdist, yearfilter, agfilter, ranged
     agerange = AgeRange(rangedef)
 
     # open input file
-    _DETAILS = open(details,'rb')
+    _DETAILS = open(details,'r',newline='')
     DETAILS = csv.DictReader(_DETAILS)
 
     # for each gender / agfilter value
@@ -171,7 +171,7 @@ def analyze(details, summarybase, mindist, maxdist, yearfilter, agfilter, ranged
             summary[year][gender] = {}
             for ag in agfilters:
                 summary[year][gender][ag] = {}
-                for thisagerange in agerange.ranges.values():
+                for thisagerange in list(agerange.ranges.values()):
                     summary[year][gender][ag][thisagerange] = set()
 
     # each row in DETAILS is a result found during scoretility Results Analyis
@@ -197,7 +197,7 @@ def analyze(details, summarybase, mindist, maxdist, yearfilter, agfilter, ranged
             for i in range(len(agfilters)):
                 ag = agfilters[i]
                 thisset = set()
-                for thisagerange in agerange.ranges.values():
+                for thisagerange in list(agerange.ranges.values()):
                     thisset |= summary[year][gender][ag][thisagerange]
                 summtotals[year][gender][ag] = thisset
 
@@ -209,10 +209,10 @@ def analyze(details, summarybase, mindist, maxdist, yearfilter, agfilter, ranged
     for year in yearfilters:
         for gender in ['M', 'F']:
             fname = pathjoin(summarybase, 'summary-{}-{}.csv'.format(year, gender))
-            with open(fname, 'wb') as _OUT:
+            with open(fname, 'w',newline='') as _OUT:
                 OUT = csv.DictWriter(_OUT, headers)
                 OUT.writeheader()
-                for thisagerange in agerange.ranges.values():
+                for thisagerange in list(agerange.ranges.values()):
                     row = {'Age Range' : thisagerange}
                     for i in range(len(agfilters)):
                         ag = agfilters[i]
@@ -251,7 +251,7 @@ def analyze(details, summarybase, mindist, maxdist, yearfilter, agfilter, ranged
     for year in yearfilters:
         for gender in ['M', 'F']:
             fname = pathjoin(summarybase, 'details-{}-{}.csv'.format(year, gender))
-            with open(fname, 'wb') as _OUT:
+            with open(fname, 'w',newline='') as _OUT:
                 OUT = csv.DictWriter(_OUT, headers)
                 OUT.writeheader()
                 # reverse order of age grade processing because higher age grade has smaller set

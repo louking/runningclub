@@ -51,7 +51,7 @@ import datetime
 # github
 
 # home grown
-import version
+from . import version
 from loutilities import timeu
 timein = timeu.asctime('%m/%d/%Y')  # format for input time
 timeout = timeu.asctime('%Y-%m-%d') # format for output time
@@ -111,11 +111,11 @@ def main():
     membershipfile = args.membershipfile
     membershiproot,membershipext = os.path.splitext(membershipfile)
     if membershipext.lower() != '.csv':
-        raise parameterError, '{}: invalid file extention, must be .csv'.format(membershipfile)
-    _IN = open(membershipfile,'rb')
+        raise parameterError('{}: invalid file extention, must be .csv'.format(membershipfile))
+    _IN = open(membershipfile,'r',newline='')
     IN = csv.DictReader(_IN)
     outfile = membershiproot + '-annotated.csv'
-    _OUT = open(outfile,'wb')
+    _OUT = open(outfile,'w',newline='')
     OUT = csv.DictWriter(_OUT,outhdr,extrasaction='ignore')
     OUT.writeheader()
     
@@ -172,7 +172,7 @@ def main():
         # TODO: REMOVE THIS -- for testing only, update email address
         if not notedemail:
             notedemail = True
-            print '***NOTE: using real email addresses'
+            print('***NOTE: using real email addresses')
         #    print '***NOTE: making all email addresses into lking@pobox.com'
         #outmember['Email'] = 'lking@pobox.com'
         

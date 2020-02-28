@@ -41,9 +41,9 @@ import time
 # other
 
 # home grown
-import version
-import racedb
-import render
+from . import version
+from . import racedb
+from . import render
 from loutilities import timeu
 tdb = timeu.asctime('%Y-%m-%d')
 
@@ -68,7 +68,7 @@ def collect(outfile,begindate=None,enddate=None,thisracedb=None):
     # create/open results file
     tfile = timeu.asctime('%Y-%m-%d')
     fname = outfile.format(date=tfile.epoch2asc(time.time()))
-    _OUT = open(fname,'wb')
+    _OUT = open(fname,'w',newline='')
     OUT = csv.DictWriter(_OUT,outfields)
     OUT.writeheader()
     
