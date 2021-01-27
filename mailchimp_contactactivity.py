@@ -116,7 +116,7 @@ def contact_activity(configfile, output, debug=False, requests=False):
             # filter to subscribed members
             members = [m for m in membersrec['members'] if m['status'] == 'subscribed']
             thislogger.info('retrieved {}/{} records, {} are subscribed'.format(
-                len(membersrec['members']), membersrec['total_items'], len(members)))
+                len(membersrec['members'])+offset, membersrec['total_items'], len(members)))
             for member in members:
                 thislogger.debug('processing {} {}'.format(numprocessed, member['email_address']))
                 numprocessed += 1
